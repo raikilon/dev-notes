@@ -1494,6 +1494,18 @@ Provisioned IOPS SSD with **independent IOPS adjustment from volume size** and *
 | **Best Use Case**    | Frequently accessed workloads (e.g., streaming, log processing) | Infrequent access (e.g., backups, long-term storage) |
 
 
+### EBS type comparison
+
+| Volume Type | Best For                | IOPS                        | Throughput | Durability  | Cost  |
+|-------------|-------------------------|-----------------------------|------------|-------------|-------|
+| gp2         | General workloads       | Burst (3 IOPS/GB, up to 16k) | Moderate   | Standard    | $$    |
+| gp3         | General workloads (better than gp2) | Provisioned (up to 16k)      | Higher     | Standard    | $     |
+| io1         | High-performance DBs    | Provisioned (up to 64k)     | High       | 99.8–99.9%  | $$$   |
+| io2         | Mission-critical DBs    | Provisioned (up to 64k+)    | High       | 99.999%     | $$$$  |
+| st1         | Big data, log processing| Low                         | High       | Lower       | $     |
+| sc1         | Cold, infrequent access | Very low                    | Low        | Lower       | $     |
+
+
 ### EBS Snapshots
 
 Protects data and allows migration. Backup is stored in S3 and is resilient within the region.
