@@ -324,23 +324,9 @@ A service for managing multiple AWS accounts under a single organizational struc
     - A single account for managing identities.
     - Cross-account access via roles.
 
-### Features:
-
-1. **Account Management**
-    - Create new accounts directly within the organization.
-    - Invite existing accounts to join.
-    - Organize accounts into OUs for easier management.
-
-2. **Billing**
-    - Consolidated billing across all accounts.
-    - Improved pricing due to combined usage volume.
-
-3. **Security**
-    - Centralized identity and access management.
-    - Cross-account role assumptions for account access.
 
 ### Best Practices:
-- Use **roles** for cross-account access instead of creating separate identities in each account.
+- Use IAM roles for cross-account access instead of creating separate identities in each AWS account. For example, a company can leverage identity federation to authenticate users into a central account, and then assume roles in other accounts to access resources as needed.
 - Structure **OUs** based on business needs (e.g., by department, environment, or function).
 - Keep the **management account focused** on organization administration.
 
@@ -385,12 +371,16 @@ A well-architected multi-account environment based on AWS best practices. It sta
 - Uses **IAM Identity Center** (formerly AWS SSO) for single sign-on across multiple accounts and identity federation.
 - Enables monitoring and notifications through **CloudWatch and SNS**.
 
+**AWS Control Tower** leverages **AWS Service Catalog** to deploy and manage standardized blueprints—called **Account Factory products**—for provisioning new AWS accounts. These products are preconfigured with guardrails, network settings, and best practices to ensure consistency and compliance across the environment. This allows organizations to automate account creation while maintaining governance and control over configurations.
+
 #### Guardrails
 
 Guardrails are rules that can be categorized as:
 - **Mandatory**
 - **Strongly recommended**
 - **Elective**
+
+They are created thanks to AWS Config. 
 
 ##### Types of Guardrails:
 - **Preventive**: Stop actions before they occur (**Status: enforced or not enabled**).
@@ -406,6 +396,17 @@ Provides automated account provisioning that can be initiated by:
 - Automatically applies guardrails to new accounts.
 - Configures network settings automatically.
 - Streamlines the account request and creation process.
+
+## AWS IAM Identity Center
+
+**AWS IAM Identity Center** (formerly AWS Single Sign-On) is a service that enables centralized management of workforce identities across AWS accounts and applications. It allows you to connect to external identity providers (like Microsoft Entra ID / Azure AD or Okta) or create users natively, then assign fine-grained access to AWS accounts, roles, and SAML-enabled applications. IAM Identity Center supports **single sign-on (SSO)** and **federated access**, giving your users one set of credentials to access multiple resources securely.
+
+IAM Identity Center differs from **AWS Organizations**. Organizations manages account structure and policy boundaries, whereas IAM Identity Center manages **who** can access those accounts and **how**.
+
+**AWS Control Tower** builds on Organizations and IAM Identity Center to provide an **opinionated landing zone**. While Organizations and IAM Identity Center provide the building blocks, Control Tower delivers a full **governance framework** out of the box.
+
+In contrast, **Amazon Cognito User Pools** are designed primarily for **customer-facing applications**, allowing developers to add **user sign-up, sign-in, and authentication** to web and mobile apps. Unlike IAM Identity Center, which is for **workforce identity**.
+
 
 ## Key Management Service (KMS)
 
@@ -548,6 +549,7 @@ You can have different modes:
 3. **AD Connector**: A proxy that forwards authentication to your on-premises AD, allowing AWS services to use your existing credentials without storing them in the cloud.
 
 # Compute
+
 ## EC2 - Elastic Compute Cloud 
 Amazon EC2 is an **Infrastructure as a Service (IaaS)** offering that provides **virtual machines (instances) as the primary cost unit**. It allows customers to provision, manage, and scale compute resources in the AWS cloud.
 
@@ -674,15 +676,30 @@ Example: **R5dn.8xlarge**
 2. **No Upfront** – Minimal discount, per-second billing even when not running.
 3. **Partial Upfront** – Mix of upfront and per-second charges.
 
-##### Reserved Instance Types:
-1. **Standard Reserved** – Traditional cost savings.
-2. **Scheduled Reserved** 
-   - **For predictable workloads**.
-   - **Minimum commitment**: 1 year or 1,200 hours.
-3. **Capacity Reservation** 
-   - Priority order: **Reserved → On-Demand → Spot**.
-   - Reserves capacity **without** long-term commitment.
-   - **No cost savings, only guarantees availability**.
+
+#### Reserved Instance Types:
+
+1. **Standard Reserved**
+
+   * Offers significant **cost savings** compared to On-Demand instances.
+   * Requires **1- or 3-year commitment**.
+   * Ideal for **steady-state workloads**.
+   * **Unused reservations can be sold** on the **AWS Reserved Instance Marketplace**, allowing you to recoup some cost if your needs change.
+
+2. **Scheduled Reserved**
+
+   * Designed for **predictable, recurring workloads** that do not run continuously.
+   * You reserve capacity for **specific time windows** (e.g., every Monday 9 AM–5 PM).
+   * **Minimum commitment**: 1 year or 1,200 hours.
+   * Cannot be sold on the Marketplace.
+
+3. **Capacity Reservation**
+
+   * Guarantees capacity in a specific Availability Zone **without requiring a long-term financial commitment**.
+   * Useful for **short-term, critical workloads** that require availability assurance.
+   * **No cost savings** – this is purely for capacity assurance.
+   * Priority order for instance allocation: **Reserved → On-Demand → Spot**.
+
 
 #### Dedicated Options 
 - **Dedicated Host**: 
@@ -942,6 +959,16 @@ Supports persistent storage options like **EBS, EFS,** etc.
 
 ![alt text](images/eks-architecture.png)
 
+### EKS Auto Scaling: Cluster Autoscaler and Karpenter
+
+Amazon EKS supports dynamic scaling of compute resources through two key mechanisms: **Cluster Autoscaler** and **Karpenter**. 
+
+The **Cluster Autoscaler** is a Kubernetes-native component that automatically increases or decreases the number of nodes in a cluster based on pod resource requests and scheduling status. It works with predefined node groups and integrates closely with EKS-managed infrastructure. 
+**Karpenter**, on the other hand, is a flexible, open-source provisioning tool that reacts to unschedulable pods by launching right-sized instances on demand, without relying on fixed node group configurations. It offers faster scaling, instance-type flexibility, and improved cost efficiency, making it well-suited for modern, dynamic workloads. 
+
+Both tools aim to ensure that applications have the compute capacity they need while minimizing manual intervention. Karpenter is faster to react and require less configuration.
+
+
 ## Serverless and Application Services
 
 ### Serverless Architecture
@@ -1062,6 +1089,33 @@ Step Functions use different **states** to define workflow logic:
 **Orchestration of multiple AWS services** – Not limited to Lambda.  
 **Reduced Lambda complexity** – Avoids using Lambda just for workflow logic.  
 **Parallel execution & decision making** – Improves efficiency.  
+
+##  Amazon Elastic MapReduce
+Amazon EMR is a managed cluster platform that simplifies running big data frameworks, such as Apache Hadoop and Apache Spark, on AWS to process and analyze vast amounts of data. 
+By using these frameworks and related open-source projects such as Apache Hive and Apache Pig, you can process data for analytics purposes and business intelligence workloads. 
+Additionally, you can use Amazon EMR to transform and move large amounts of data into and out of other AWS data stores and databases such as Amazon Simple Storage Service (Amazon S3) and Amazon DynamoDB.
+
+
+
+## Elastic Beanstalk
+is a classic Platform as a Service (PaaS) that lets you deploy web applications in popular runtimes (like Java, Node.js, Python) with minimal configuration. It handles provisioning, load balancing, and scaling on your behalf, but still gives access to the underlying resources like EC2 and RDS.
+
+## AWS App Runner
+is a modern, fully managed service for running **containerized** web apps and APIs directly from source code or container images. It abstracts away all infrastructure, offering a simpler alternative to Beanstalk, especially for microservices and container-native applications.
+
+## Amazon Lightsail 
+is designed for users who want to quickly launch **simple applications or virtual servers** with predictable pricing. It provides easy-to-use instances, containers, and databases — perfect for small apps, prototyping, or migrating from traditional VPS providers.
+
+## Comparison Table: Beanstalk vs App Runner vs Lightsail vs Fargate vs Lambda
+
+| Service             | Type                     | Best For                                     | Infra Management       | Autoscaling           |
+|---------------------|--------------------------|-----------------------------------------------|------------------------|------------------------|
+| **Elastic Beanstalk** | PaaS (on EC2)           | Traditional web apps with minimal setup       | Partial (some access)  | Built-in             |
+| **App Runner**       | Fully managed container | Modern containerized apps/APIs from Git/ECR   | Fully abstracted     | Fully managed        |
+| **Fargate (ECS)**    | Serverless containers   | Microservices with custom networking & scaling| Full control (via ECS)| Per task             |
+| **Lightsail**        | Simplified cloud hosting| Small apps, websites, prototypes               | Full (but simplified)| Limited/basic        |
+| **Lambda**           | Serverless functions    | Event-driven functions, microservices         | Fully abstracted     | Per invocation       |
+| **Raw EC2**          | IaaS                    | Full control apps (DIY setup)     
 
 # Storage
 
@@ -1227,7 +1281,7 @@ The **default class is S3 Standard**, where objects are replicated across at lea
 - **Very cheap** for storage.
 - Objects are **cold storage** (not immediately available).
 - Retrieval types:
-  - **Expedited**: 1-5 minutes (expensive).
+  - **Expedited**: 1-5 minutes (expensive). You can reserve capacity.
   - **Standard**: 3-5 hours.
   - **Bulk**: 5-12 hours.
 - Minimum object size: 40 KB.
@@ -1299,7 +1353,7 @@ Both assume a role to replicate data to the destination bucket. If the buckets a
 - All objects or a subset of them
 - The storage class for the destination (e.g., a cheaper storage class). By default, it uses the same class as the source.
 - Ownership: By default, the source account retains ownership. This is fine if both buckets are in the same account but needs to be overridden if they are in different accounts.
-- **Replication Time Control (RTC)**: Ensures replication within 15 minutes.
+- **Replication Time Control (RTC)**: Ensures replication within 15 minutes (need to be enabled).
 
 By default (unless batch replication is used), replication is **not retroactive**, and **versioning must be enabled**. Replication is **one-way only** (though bi-directional replication is now available).
 
@@ -1643,7 +1697,7 @@ The gateway should be placed in a private subnet for security. It will connect t
 Storage Gateway can be deployed as a hardware appliance or, more commonly, as a virtual machine. It presents storage via iSCSI (block storage), NFS, or SMB and integrates with EBS, S3, and Glacier. Common use cases include migrations, storage extension/tiering, and backups.
 
 - **Stored Volume mode**:  
-  The gateway presents volumes (via iSCSI) backed by **local** storage. All data is stored locally and then asynchronously uploaded to AWS through the gateway’s upload buffer. This is useful for full disk backups with quick on-premises restores. However, it doesn’t extend on-premises storage capacity since all data must fit locally.
+  The gateway presents volumes storage. All data is stored locally and then asynchronously uploaded to AWS through the gateway’s upload buffer. This is useful for full disk backups with quick on-premises restores. However, it doesn’t extend on-premises storage capacity since all data must fit locally.
 
   ![alt text](images/volume-gateaway-store-mode.png)
 
@@ -1692,7 +1746,7 @@ It supports multiple AWS services, including EC2, EBS, Aurora, RDS, and S3.
 
 ### DataSync
 
-A **data transfer** service to move data to and from AWS at scale (10 Gbps per agent, up to ~100 TB/day). Common use cases: migrations, archiving, DR, or large-scale ongoing data transfers. It preserves metadata (permissions, timestamps), runs on a pay-as-you-go model, and can transfer to S3, EFS, FSx, etc. It uses **tasks** (jobs defining what, where, and how quickly to transfer). DataSync can read/write via NFS or SMB.
+A **data transfer** service to move data to and from AWS at scale (10 Gbps per agent, up to ~100 TB/day). Common use cases: migrations, archiving, DR, or large-scale ongoing data transfers. It preserves metadata (permissions, timestamps), runs on a pay-as-you-go model, and can transfer to S3, EFS, FSx, etc. It uses **tasks** (jobs defining what, where, and how quickly to transfer). DataSync can read/write via NFS or SMB. It is used usually to have two way sync or recurring uploads.
 
 ![alt text](images/datasync.png)
 
@@ -1827,7 +1881,7 @@ A **region-resilient gateway** attached to a **VPC**, covering **all AZs** in th
 
 - A **VPC can have 0 or 1 IGW**.
 - An **IGW can have 0 or 1 VPC**.
-- It runs inside the **AWS public zone** and acts as a gateway between the **VPC and the internet/AWS public zone**.
+- It runs on the boarder of the **AWS public zone** and acts as a gateway between the **VPC and the internet/AWS public zone**.
 - We can **reference it inside our route table**.
 
 A Public Subnet Has a Route Table entry pointing 0.0.0.0/0 to the IGW.
@@ -2005,7 +2059,7 @@ Allows outbound-only connections from the **VPC to the internet**.
 - Controlled using **Security Groups** and **Endpoint Policies**.
 - Works **only with TCP and IPv4**.
 - Uses **AWS PrivateLink**, enabling private connectivity to AWS services over the AWS backbone. AWS PrivateLink is a service that enables private, VPC-internal access to AWS services without exposing traffic to the internet, by routing requests through an Interface Endpoint (ENI) inside your VPC.
-- Provides Regional DNS (accessible from any subnet in the AWS region), Zonal DNS (specific to a single Availability Zone for low-latency access), and Private DNS, which overrides the default public AWS service DNS to route traffic through the private ENI in the VPC, ensuring applications can connect privately without modification.
+- Provides Regional DNS (accessible from any subnet in the AWS region), Zonal DNS (specific to a single Availability Zone for low-latency access), and Private DNS, which overrides the default public AWS service DNS to route traffic through the private ENI in the VPC, ensuring applications can connect privately without modification.Provides Regional and Zonal DNS that resolve to the best-performing endpoint (typically in the same AZ), and Private DNS, which replaces the public AWS service name with a private IP, ensuring even resources in public subnets route traffic through the Interface Endpoint
 
 ![alt text](images/interface-endpoints.png)
 
@@ -2169,6 +2223,8 @@ If an endpoint is unhealthy, it is **not returned** in DNS query responses.
 Multiple records exist for the same name (primary and secondary). A **health check monitors the primary**; if it fails, the secondary record is returned.
 
 Use failover routing when you want to configure **active-passive failover** (e.g., using a static website on S3 as a backup).
+
+Active-Active Failover: use this failover configuration when you want all of your resources to be available the majority of the time. When a resource becomes unavailable, Route 53 can detect that it’s unhealthy and stop including it when responding to queries.
 
 ### Multi-Value Routing
 
@@ -2459,7 +2515,7 @@ It is **highly available** (if configured correctly) and quick to provision (oft
 
 Components of the VPN:
 - **VPC**
-- **Virtual Private Gateway (VGW)** associated with a single VPC
+- **Virtual Private Gateway (VGW)** associated with a single VPC (with 2 endpoints one in each AZ)
 - **Customer Gateway (CGW)**: a logical configuration in AWS that represents the physical device on-premises
 - **VPN connection** between the VGW and CGW
 
@@ -2643,6 +2699,31 @@ A **web ACL** has a default action—either “allow” or “block” all reque
 - **Rules**: They can be regular or rate-based. The rule statement describes what traffic to match. By default, only the first 8,192 bytes of the request body are inspected. Each rule has an action (allow, block, count, log, CAPTCHA, or custom response).  
 
 **Pricing** includes a monthly charge for each web ACL, plus charges per rule and per million requests. You can enable additional capabilities (like automated threat intelligence) for an extra cost.
+
+###  AWS Network Firewall
+
+**AWS Network Firewall** is a managed service that provides advanced network traffic filtering for your Amazon VPC. It allows you to define fine-grained security rules to control both inbound and outbound traffic at the VPC level. 
+
+Operating at layers 3 and 4 of the OSI model, Network Firewall supports both **stateful** and **stateless** rule groups, enabling deep inspection of traffic, including filtering by IP, port, protocol, and domain names. 
+
+It integrates with AWS Transit Gateway and VPC routing to deliver **centralized, scalable** protection across multiple subnets and VPCs. Common use cases include **east-west traffic inspection**, **egress filtering**, **threat prevention**, and **logging for compliance**.
+
+### AWS Network Firewall vs AWS WAF
+
+| Feature / Aspect              | AWS Network Firewall                        | AWS WAF (Web Application Firewall)              |
+|------------------------------|----------------------------------------------|-------------------------------------------------|
+| **OSI Layer**                | Layers **3–4** (Network & Transport)         | Layer **7** (Application - HTTP/HTTPS)          |
+| **Traffic Type**             | IP-based traffic (TCP, UDP, DNS, etc.)       | Web traffic (HTTP/S only)                       |
+| **Primary Use Case**         | VPC-level network traffic filtering          | Web app protection at the edge or app layer     |
+| **Protects Against**         | - IP/domain-based threats                    | - **SQL injection**                             |
+|                              | - Protocol misuse (e.g. port scanning)       | - **Cross-site scripting (XSS)**                |
+|                              | - Malicious outbound connections (egress)    | - **Bot attacks**                               |
+|                              | - Known bad IPs/domains                      | - **HTTP flood/DDoS (rate limiting)**           |
+| **Payload Inspection**       | Basic to deep (stateful rules, domain names) | Deep (can inspect headers, URIs, bodies)        |
+| **Deployment Scope**         | VPC/subnet level (via route tables)          | Tied to services like **ALB**, **CloudFront**, or **API Gateway** |
+| **Threat Focus**             | Network-level intrusions, malware, tunneling | Application-layer exploits and abuses           |
+
+
 
 ## AWS Certificate Manager (ACM)
 
@@ -3007,7 +3088,7 @@ ElastiCache provides managed in-memory databases for low-latency, high-performan
 - Multi-threaded.
 
 ## Amazon Redshift
-Amazon Redshift is a petabyte-scale data warehouse optimized for OLAP (column-based storage).
+Amazon Redshift is a petabyte-scale data warehouse optimized for OLAP (column-based storage). Can work with Quicksight.
 - Pay-as-you-use pricing (similar to RDS).
 - Redshift Spectrum allows querying data directly in S3.
 - Supports federated queries with other databases.
@@ -3027,7 +3108,7 @@ Amazon Redshift is a petabyte-scale data warehouse optimized for OLAP (column-ba
 - Automated snapshots every **8 hours** or **5GB of data change** (retention: 1-35 days).
 - **Manual snapshots** persist until explicitly deleted.
 - Backups are stored in S3 (multi-AZ resilience).
-- Snapshots can be restored to any AZ or copied across regions for disaster recovery.
+- Snapshots can be restored to any Availability Zone (AZ) and copied across regions for disaster recovery. You can configure Amazon Redshift to automatically copy snapshots from a cluster to another region by enabling the cross-region snapshot copy feature. This configuration must be set up individually for each cluster, specifying the destination region and the retention period for the copied automated snapshots
 
 ## Amazon Athena
 Athena is a serverless, interactive query service for analyzing data in Amazon S3.
@@ -3486,7 +3567,7 @@ Example:
 Collects and manages operational data.
 - **Metrics**: Tracks performance indicators (CPU, disk, RPS, etc.), including on-premises monitoring.
 - **CloudWatch Logs**: Monitors and stores log data.
-- **CloudWatch Events**: Captures service events or scheduled events.
+- **CloudWatch Events**: CloudWatch Events (now EventBridge): Captures real-time AWS service events or scheduled events and routes them to targets such as Lambda functions, SNS topics, or SQS queues for automated processing.
 
 Some metrics are collected automatically, while others require an agent installation.
 
