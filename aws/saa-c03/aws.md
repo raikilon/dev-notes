@@ -1095,7 +1095,11 @@ Amazon EMR is a managed cluster platform that simplifies running big data framew
 By using these frameworks and related open-source projects such as Apache Hive and Apache Pig, you can process data for analytics purposes and business intelligence workloads. 
 Additionally, you can use Amazon EMR to transform and move large amounts of data into and out of other AWS data stores and databases such as Amazon Simple Storage Service (Amazon S3) and Amazon DynamoDB.
 
+## AWS AppSync
 
+AWS AppSync is a fully managed service that makes it easy to develop GraphQL APIs by handling the heavy lifting of securely connecting to data sources like AWS DynamoDB, Lambda, and RDS. 
+
+It enables real-time data synchronization and offline capabilities for applications, making it ideal for building modern, responsive apps. AppSync also integrates with AWS Amplify and provides features like fine-grained access control, subscriptions for real-time updates, and caching to improve performance.
 
 ## Elastic Beanstalk
 is a classic Platform as a Service (PaaS) that lets you deploy web applications in popular runtimes (like Java, Node.js, Python) with minimal configuration. It handles provisioning, load balancing, and scaling on your behalf, but still gives access to the underlying resources like EC2 and RDS.
@@ -1106,16 +1110,21 @@ is a modern, fully managed service for running **containerized** web apps and AP
 ## Amazon Lightsail 
 is designed for users who want to quickly launch **simple applications or virtual servers** with predictable pricing. It provides easy-to-use instances, containers, and databases — perfect for small apps, prototyping, or migrating from traditional VPS providers.
 
-## Comparison Table: Beanstalk vs App Runner vs Lightsail vs Fargate vs Lambda
+## Comparison Table
 
-| Service             | Type                     | Best For                                     | Infra Management       | Autoscaling           |
-|---------------------|--------------------------|-----------------------------------------------|------------------------|------------------------|
-| **Elastic Beanstalk** | PaaS (on EC2)           | Traditional web apps with minimal setup       | Partial (some access)  | Built-in             |
-| **App Runner**       | Fully managed container | Modern containerized apps/APIs from Git/ECR   | Fully abstracted     | Fully managed        |
-| **Fargate (ECS)**    | Serverless containers   | Microservices with custom networking & scaling| Full control (via ECS)| Per task             |
-| **Lightsail**        | Simplified cloud hosting| Small apps, websites, prototypes               | Full (but simplified)| Limited/basic        |
-| **Lambda**           | Serverless functions    | Event-driven functions, microservices         | Fully abstracted     | Per invocation       |
-| **Raw EC2**          | IaaS                    | Full control apps (DIY setup)     
+| Service              | Type                     | Best For                                     | Infra Management       | Autoscaling           |
+|----------------------|--------------------------|-----------------------------------------------|------------------------|------------------------|
+| **Elastic Beanstalk**| PaaS (on EC2)            | Traditional web apps with minimal setup       | Partial (some access)  | Built-in               |
+| **App Runner**       | Fully managed container  | Modern containerized apps/APIs from Git/ECR   | Fully abstracted       | Fully managed          |
+| **Fargate (ECS)**    | Serverless containers    | Microservices with custom networking & scaling| Full control (via ECS) | Per task               |
+| **Lightsail**        | Simplified cloud hosting | Small apps, websites, prototypes              | Full (but simplified)  | Limited/basic          |
+| **Lambda**           | Serverless functions     | Event-driven functions, microservices         | Fully abstracted       | Per invocation         |
+| **Raw EC2**          | IaaS                     | Full control apps (DIY setup)                 | Manual (full control)  | Manual                 |
+| **AppSync**          | Managed GraphQL API      | Real-time apps, GraphQL APIs, frontend/backend | Fully abstracted       | Built-in (real-time & cache scaling) |
+
+
+![alt text](images/compute-types.png)
+
 
 # Storage
 
@@ -3067,6 +3076,8 @@ TTL enables the automatic deletion of items by setting an expiration timestamp (
 - Expired items are removed from tables, indexes, and streams (if enabled).
 - TTL deletions do not impact table performance and are free.
 - TTL streams (24-hour rolling window of deletions) can be enabled.
+
+
 
 
 ## Amazon ElastiCache
