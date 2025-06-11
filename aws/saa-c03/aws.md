@@ -1611,10 +1611,10 @@ By default, **EBS volumes are not encrypted**, but they can be encrypted using A
 - **Any new volume created from an encrypted snapshot inherits encryption**.
 - **No additional cost for encryption**.
 - **Accounts can enable default encryption** (uses a default KMS key).
--  **Each EBS volume, snapshot, and copy gets a unique DEK. Encryption is inherited**, but AWS KMS generates a new DEK for each resource.
+- **Each EBS volume, snapshot, and copy gets a unique DEK. Encryption is inherited**, but AWS KMS generates a new DEK for each resource.
 - **Encrypted volumes cannot be converted to unencrypted**.
 - **The OS is unaware of encryption**, ensuring no performance impact.
-
+- **All data moving** between the volume and the instance are encrypted.
 
 ## Elastic File System (EFS)
 
@@ -2057,6 +2057,7 @@ Allows outbound-only connections from the **VPC to the internet**.
 - When you create a **Gateway Endpoint**, it **adds a prefix list to the route table**, directing traffic to the AWS service.
 - You can attach an **endpoint policy** to control access (e.g., limit access to specific S3 buckets).
 - Works **only within the same AWS region**.
+- Not billed
 
 ![alt text](images/gateway-endpoint.png)
 
@@ -3661,3 +3662,11 @@ For customized logging, you need to create one or more Trails.
 Parameter Store can also store sensitive information, so when should you use AWS Secrets Manager instead?
 
 AWS Secrets Manager is specifically designed for storing secrets, and you can manage it via the console, CLI, or API. It supports **automatic rotation of secrets** (using a Lambda function) and integrates with certain AWS services like Amazon RDS (when a password is rotated, the RDS service is automatically updated as well). All secrets are encrypted with KMS.
+
+## Amazon Pinpoint
+
+Amazon Pinpoint is a scalable and flexible outbound and inbound marketing communications service provided by AWS. 
+
+It enables businesses to engage with their customers across multiple channels such as email, SMS, push notifications, and voice messages.
+
+Designed for both transactional and targeted messaging, Amazon Pinpoint allows users to create segmented campaigns, analyze user behavior, and personalize communications at scale. It is particularly useful for mobile and web applications that require real-time engagement and customer feedback.
