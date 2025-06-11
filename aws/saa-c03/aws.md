@@ -3338,6 +3338,17 @@ API Gateway helps **create, manage, and deploy APIs**.
 
 ![alt text](images/glue.png)
 
+### AWS Glue DataBrew
+
+AWS Glue DataBrew is a no-code tool for visually cleaning and transforming data. It provides pre-built functions to prepare data quickly for analytics and machine learning.
+
+### AWS Glue Studio
+
+AWS Glue Studio is a visual interface for building, running, and managing ETL jobs. It simplifies data pipeline creation using a drag-and-drop editor.
+
+In short, **DataBrew is for data preparation**, while **Glue Studio is for building full ETL pipelines**.
+
+
 ## AppFlow
 
 **Fully managed integration service** for moving data between SaaS applications and AWS services.
