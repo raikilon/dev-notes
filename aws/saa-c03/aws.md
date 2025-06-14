@@ -548,6 +548,14 @@ You can have different modes:
 2. **AWS Managed Microsoft AD**: A Microsoft Active Directory 2012 instance that can establish trust relationships with an on-premises AD over VPN or Direct Connect (it can also run standalone in AWS).
 3. **AD Connector**: A proxy that forwards authentication to your on-premises AD, allowing AWS services to use your existing credentials without storing them in the cloud.
 
+## AWS Artifact
+Is a centralized resource within the AWS Management Console that provides on-demand access to AWS's compliance reports and security documentation. 
+
+It allows users to download audit artifacts such as SOC reports, ISO certifications, and PCI reports, helping organizations meet internal security and compliance requirements. 
+
+These reports are securely stored and kept up to date, making it easier for customers to demonstrate their own compliance using AWS infrastructure.
+
+
 # Compute
 
 ## EC2 - Elastic Compute Cloud 
