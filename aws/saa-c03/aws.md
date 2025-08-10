@@ -306,6 +306,22 @@ They are usually created by the service itself, or the service allows you to cre
 - `PassRole` allows a user to configure a service with a role but **does not grant permission to modify the role** → ensures role separation (you need also permission to add a role to a service).
 
 
+## AWS Security Token Service (STS)
+
+AWS Security Token Service (STS) generates **temporary security credentials**.  
+When you call `sts:AssumeRole`, STS returns:  
+- **Access key ID**  
+- **Secret access key**  
+- **Session token**  
+
+These credentials expire after a set duration (default: 1 hour; maximum varies by service).
+
+Temporary credentials are always requested by an **identity**, which can be:
+
+- **AWS identities** – IAM users or IAM roles within your AWS account.  
+- **Federated identities** – External users authenticated through an identity provider (IdP) such as **SAML 2.0**, **OpenID Connect**, or **Amazon Cognito**.  
+- **Cross-account roles** – IAM roles in another AWS account that you are allowed to assume.
+
 ## AWS Organizations
 
 A service for managing multiple AWS accounts under a single organizational structure.
@@ -1236,6 +1252,22 @@ By default, S3 uploads a single data stream (PutObject). If the upload fails, th
 **Multipart upload** improves speed and reliability. It is recommended for files larger than 100MB. The maximum number of parts is 10,000, with each part being at least 5MB (except the last part, which can be smaller). This allows a total maximum object size of 5TB. The transfer rate is determined by the combined speed of all parts uploaded in parallel, and individual parts can fail without affecting others.
 
 **Accelerated Transfer:** When transferring data over long distances (e.g., from Australia to a bucket in the UK), the process can be slow. S3 Transfer Acceleration utilizes AWS edge locations to speed up data transfers. Data enters the nearest AWS edge location and then uses the AWS global network for faster delivery. This feature must be enabled (bucket names cannot contain periods), and a new endpoint is provided. The greater the distance between the source and the target, the more beneficial Transfer Acceleration becomes.
+
+### S3 Requester Pays
+
+By default, the **bucket owner** pays for all data transfer and request costs.  
+With the **Requester Pays** setting (enabled at the **bucket level**), the requester becomes responsible for these costs.
+
+Key points:
+- Does **not** work with static website hosting.
+- Applies to the entire bucket, not individual objects.
+- All requests must be **authenticated** (no anonymous access).
+- The requester must include the header:  
+  `x-amz-request-payer: requester`  
+  to confirm they accept the charges.
+
+Use case:  
+- Hosting popular files where you don’t want to pay for all download traffic, such as large public datasets or frequently accessed logs.
 
 
 ### Server-Side Encryption (SSE)
