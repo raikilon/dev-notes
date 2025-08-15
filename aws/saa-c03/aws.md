@@ -249,6 +249,18 @@ On every node, besides the container runtime and **kubelet**, the **kube-proxy**
 
 For larger-scale environments, use **IAM Roles** and/or **identity federation**.
 
+#### Policy Evaluation Logic  
+
+When evaluating permissions, keep the following in mind:  
+- Organization SCPs  
+- Resource policies  
+- IAM permission boundaries  
+- Session policies  
+- Identity policies  
+
+![alt text](images/policy-evaluation-logic.png)  
+
+If you are dealing with multiple accounts, both must allow the action (e.g., account A is performing an operation on resources in account B).  
 
 ### IAM Groups
 
@@ -1218,6 +1230,8 @@ You can:
 **Access Control Lists (ACLs)** are a legacy method of access control for objects and buckets. They cannot include conditions and cannot be assigned to multiple objects.
 
 **Block public access** is an additional setting that prevents public access, implemented due to past issues with unintended public exposure of data.
+
+You need to define CORS policy on the bucket with a json document. The rules are processed in order, the first rule which matches is used.
 
 ### Static Hosting
 
@@ -3632,7 +3646,7 @@ Collects and manages operational data.
 - **CloudWatch Logs**: Monitors and stores log data.
 - **CloudWatch Events**: CloudWatch Events (now EventBridge): Captures real-time AWS service events or scheduled events and routes them to targets such as Lambda functions, SNS topics, or SQS queues for automated processing.
 
-Some metrics are collected automatically, while others require an agent installation.
+Some metrics are collected automatically, while others require an agent installation or the use of the CloudWatch API.
 
 ![](images/cloudwatch.png)
 
@@ -3642,12 +3656,25 @@ Some metrics are collected automatically, while others require an agent installa
 - **Dimensions**: Provide different perspectives on metrics by grouping datapoints (e.g., `instanceId`).
 - **Alarms**: Linked to specific metrics, triggering actions based on conditions; states are **OK** or **Alarm**.
 
+You can publish data with a specific resolution:
+
+- Standard: 60 seconds
+- High: 1 second
+
+For each resolution, CloudWatch applies a retention period:
+
+- < 60 seconds → 3 hours
+- 60 seconds → 15 days
+- 5 minutes → 63 days
+- ... and so on
+
+As data ages, high resolution becomes less important.
 
 ### CloudWatch Logs
 
 A public service that can be accessed from both VPC and on-premises environments.
 
-Stores, monitors, and provides access to logging data. It has extensive built-in integrations with many AWS services.
+Stores, monitors, and provides access (subscription) to logging data. It has extensive built-in integrations with many AWS services.
 
 ![alt text](images/claudwatch-logs-architecture.png)
 
@@ -3659,6 +3686,33 @@ Stores, monitors, and provides access to logging data. It has extensive built-in
 | **Filters & Alarms** | Applied at log group level | Not applied at log stream level |
 | **Uniqueness** | Identified by a name (e.g., `/aws/lambda/my-function`) | Identified within a log group (e.g., instance ID, Lambda request ID) |
 
+
+#### Subscription
+
+You can deliver logs in real time to other systems using subscriptions at the log group level.
+
+To set this up, you create a subscription filter on a log group and specify a target destination.
+
+![alt text](images/cloudwatch-logs-subscriptions.png)
+
+CloudWatch Logs subscriptions can be used to aggregate logs from multiple applications or log groups into a central destination.
+
+For example:
+
+- Send logs from different apps and CloudWatch log groups
+- Stream them into a central Kinesis Data Stream
+- Use Kinesis Data Firehose to deliver them to Amazon S3 for storage or analytics.
+
+## X-RAY
+
+AWS X-Ray collects data about requests as they travel through a distributed application, allowing you to visualize the flow of a session across multiple services.
+
+A trace ID is inserted into the tracing header and used to track each request end-to-end. Data is sent to X-Ray in segments (data blocks containing various details) and subsegments (smaller units within a segment).
+
+X-Ray generates:
+
+- Service Graph – A JSON document detailing the services and resources that make up the application, along with their relationships.
+- Service Map – A visual representation of the service graph, showing traces and performance data..
 
 ## CloudTrail
 
