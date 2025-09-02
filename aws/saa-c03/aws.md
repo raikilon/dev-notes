@@ -2434,6 +2434,20 @@ There are **two SSL connections** in CloudFront:
 1. **Viewer → CloudFront**
 2. **CloudFront → Origin** (both require **public certificates**, private ones do **not** work).
 
+#### Geo Restriction
+There are two types:  
+
+- **CloudFront Geo Restriction** – Works like a whitelist or blacklist (based on country codes). It applies to the entire distribution.  
+  ![alt text](images/cloudfront-georestriction.png)  
+
+- **3rd-Party Geolocation** – Fully customizable.  
+  ![alt text](images/cloudfront-georestriction-3rdparty.png)  
+
+
+#### Field-Level Encryption
+The connection between the client and the origin can be encrypted using **HTTPS**, but this means the information is still processed by the web server in plain text (HTTP).  
+
+**Field-level encryption** allows certain data to be encrypted at the edge using a **public/private key pair** (in addition to HTTPS). This ensures that only entities with access to the private key can decrypt and view the sensitive data.  
 ### Origin Types
 
 CloudFront **fetches** data from an **origin** if it's not found in edge locations. You can create **origin groups** for **higher resilience** (define a primary and secondary, for failover, origin for your distribution).
