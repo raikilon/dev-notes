@@ -3432,6 +3432,60 @@ In short, **DataBrew is for data preparation**, while **Glue Studio is for build
 
 ![alt text](images/appflow.png)
 
+# AWS CLI, Developer Tools, and CI/CD
+
+## CI/CD Overview
+
+AWS provides all the tools needed for a developer pipeline, along with orchestration services that bind everything together.
+
+![AWS Developer Pipeline](images/aws-developer-pipeline.png)
+
+- Each **pipeline** is typically connected to a single branch.  
+- **buildspec.yaml** and **appspec.yaml/json** define how builds and deployments are executed.  
+
+### CodePipeline
+- Orchestration service for all steps in the pipeline.  
+- A pipeline is built from **stages**, and each stage can have **sequential** or **parallel** actions.  
+- Actions can **generate** or **consume** artifacts.  
+- State changes are published to **EventBridge**.  
+
+### CodeCommit
+- Similar to GitHub, but hosted in AWS.  
+- You can create repositories and clone them.  
+- **Notifications**: sent based on repo events (delivered to **SNS** or **Chatbot**).  
+- **Triggers**: invoke **SNS** or **AWS Lambda** (notifications = info only, triggers = actions on events).  
+
+### CodeBuild
+- Build (and test) as a service → replaces tools like Jenkins.  
+- Uses **Docker**, integrates with many AWS services.  
+- **Sources**: CodeCommit, GitHub, S3, etc.  
+- Configured via **buildspec.yaml** (must be in the source root).  
+- Events → **EventBridge**, Logs → **CloudWatch Logs** / **S3**, Metrics → **CloudWatch**.  
+- `buildspec.yaml` phases:  
+  1. **install** – install dependencies  
+  2. **pre_build** – auth or extra setup  
+  3. **build** – compile, test, package  
+  4. **post_build** – push artifacts, publish Docker images, etc.  
+- Supports **environment variables** and **artifacts**.  
+
+### CodeDeploy
+- **Code deployment as a service** → deploys **code**, not resources.  
+- Targets: **EC2**, **on-premises**, **AWS Lambda**, **Amazon ECS**.  
+- Uses the **CodeDeploy agent** (for EC2 and on-premises).  
+- Deployment config defined in **appspec.yaml/json**:  
+  - **Files** (EC2/on-premises): which files to copy and where.  
+  - **Resources** (ECS/Lambda): which services/functions to update.  
+  - **Permissions** (EC2/on-premises): which user/group owns the files.  
+- **Lifecycle event hooks** define scripts or commands to run at specific stages:  
+  1. `ApplicationStop`  
+  2. `DownloadBundle`  
+  3. `BeforeInstall`  
+  4. `Install`  
+  5. `AfterInstall`  
+  6. `ApplicationStart`  
+  7. `ValidateService`  
+- Supports **in-place** and **blue/green** deployments.  
+
 # Amazon ML
 
 ## Amazon Comprehend
