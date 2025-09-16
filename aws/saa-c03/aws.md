@@ -3252,6 +3252,19 @@ SQS Pricing
 
 ![alt text](images/sqs-delay-queue-vs-visibility-timeout.png)
 
+### Extended Client Library
+
+The Extended Client Library allows you to send payloads larger than **256 KB**.  
+When using it, the payload is stored in **Amazon S3**, and only a reference (link) is placed in the SQS message.  
+This enables messages of up to **2 GB** in size.  
+
+Key points:  
+- The library is available in multiple programming languages.  
+- When reading a message, the library automatically retrieves the payload from S3.  
+- When deleting a message from the queue, it also deletes the corresponding payload from S3.  
+
+In short, the Extended Client Library provides an interface that integrates **Amazon SQS** with **Amazon S3**.
+
 ## CloudWatch Events and EventBridge (CloudWatch v2)
 
 AWS is moving towards **EventBridge** as the preferred event service.
