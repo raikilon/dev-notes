@@ -1081,20 +1081,65 @@ Lambda uses **CloudWatch**, **CloudWatch Logs**, and **X-Ray** for monitoring an
 
 A **version** in Lambda includes:
 - **Code** + **Configuration**  
-- Versions are **immutable** and get their own **Amazon Resource Name (ARN)**.
+- Versions are **immutable** and get their own **Amazon Resource Name (ARN)**.  
+- A version contains the function code, dependencies, runtime, settings, and environment variables.  
+- A version is created when **published**.
 
-- **$LATEST** always points to the most recent version.
-- **Aliases** (e.g., `DEV`, `STAGE`, `PROD`) can point to specific versions and can be updated.
+- **$LATEST** always points to the most recent unpublished version.  
+- **Aliases** (e.g., `DEV`, `STAGE`, `PROD`) can point to specific versions and be updated.  
+  - An alias has a unique ARN but can be updated to point to another version without changing the ARN.  
+  - Aliases can also use **traffic shifting** (e.g., 90% to one version and 10% to another).
+
+- **Qualified ARN** → points to a specific version.  
+- **Unqualified ARN** → points to the function ($LATEST) and not a specific version.
+
+
+#### Environment Variables
+
+- Environment variables are **key–value pairs**.  
+- They are associated with **$LATEST** and, once a version is published, they are copied into that version.  
+- Environment variables can be encrypted with **KMS**.
+
+
+#### Monitoring, Logging, and Tracing
+
+- All Lambda metrics are available in **CloudWatch** or via the monitoring tab on the function.  
+- Metrics have different **dimensions** like function name, alias/version, etc.  
+- Available metrics include: **Invocations, Errors, Duration, ConcurrentExecutions, DeadLetterErrors, DestinationDeliveryFailures**.
+
+- Logs are sent to **CloudWatch Logs** (stdout and stderr).  
+  - A log group is created for each Lambda: `/aws/lambda/<function-name>`.  
+  - The **execution role** must include permissions to write logs.  
+
+- **Tracing with X-Ray**:  
+  - Can be enabled to see the flow of requests.  
+  - Requires activating **Active Tracing** (`update-function-configuration --function-name <name> --tracing-config Mode=Active`).  
+  - Requires the `AWSXrayDaemonWriteAccess` managed policy.  
+
 
 #### Startup Time
 
-When a Lambda function starts, the runtime and resources take time to initialize (**Cold Start**). This creates the **execution context**.  
-If the function is invoked frequently, the same execution context may be **reused** (**Warm Start**).
+When a Lambda function starts, the runtime and resources need time to initialize (**Cold Start**). This creates the **execution context**.  
 
-- **One execution = One execution context.**
-- If 20 Lambda functions run simultaneously, there will be **20 cold starts**.
+- If the function is invoked frequently, the same execution context may be **reused** (**Warm Start**).  
+- **One execution = One execution context.**  
+- If 20 Lambda functions run simultaneously, there will be **20 cold starts**.  
 
-To **reduce cold starts**, AWS offers **Provisioned Concurrency**, which keeps pre-initialized execution contexts ready to serve requests.
+To reduce cold starts:  
+- Use **Provisioned Concurrency**, which keeps pre-initialized execution contexts ready.
+
+
+#### Lambda Function Handler
+
+Lambda executions run inside an **execution environment**, which goes through these phases:
+
+- **INIT**: Creates (or unfreezes) the execution environment. Code outside the handler runs only once per cold start.  
+- **INVOKE**: Runs the function handler (`lambda_handler`). First invoke = cold start. Subsequent invokes = warm start.  
+- **SHUTDOWN**: If the Lambda is idle for a while, the environment is destroyed.  
+
+Other notes:
+- Use **provisioned concurrency** to pre-warm environments.  
+- You can configure the **handler file and function name**.  
 
 
 ### Step Functions
