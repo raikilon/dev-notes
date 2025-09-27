@@ -1056,7 +1056,7 @@ Lambda uses **CloudWatch**, **CloudWatch Logs**, and **X-Ray** for monitoring an
 - **Metrics** go to **CloudWatch**.
 - **X-Ray** can be used for distributed tracing (tracking the flow of a request across multiple AWS services).
 
-💡 *Remember to give Lambda permission to write logs by adding the necessary permissions to the execution role.*
+*Remember to give Lambda permission to write logs by adding the necessary permissions to the execution role.*
 
 #### Invocation
 
@@ -1141,6 +1141,54 @@ Other notes:
 - Use **provisioned concurrency** to pre-warm environments.  
 - You can configure the **handler file and function name**.  
 
+#### Lambda Layers
+
+- If you use a large library for computation and you are not using layers, AWS will package everything into a big deployment zip archive.  
+- If you have 10 similar but slightly different functions, you end up with 10 big archives.  
+
+With **layers**, you can separate your own code from the libraries and reuse the shared libraries across functions.  
+
+- If you use external modules (e.g., in Python), they are not loaded automatically.  
+- You need to either package them in your deployment zip or create a **layer** (your own or an AWS-provided one).  
+
+
+#### Lambda Container Images
+
+- Lambda is a FaaS, but many teams use **containers** and **CI/CD** workflows.  
+- Lambda supports running **container images**.  
+- The image must include the **Lambda Runtime API**.  
+- For local testing, you can use the **AWS Lambda Runtime Interface Emulator (RIE)**.  
+
+![alt text](images/lambda-container-images.png)
+
+#### Lambda and ALB
+
+- Lambda can be triggered by **API Gateway**, other AWS services, or an **Application Load Balancer (ALB)**.  
+- An ALB can translate HTTP/S requests into a Lambda-compatible event (JSON) and return a response.  
+
+![alt text](images/lambda-alb.png)
+
+- If a request contains multiple values (e.g., `xxxx.com?search=test1&search=test2`):  
+  - Without multi-value headers, the Lambda receives only `test1`.  
+  - With multi-value headers enabled, the ALB passes `multiValueQueryStringParameters`, which contains an array of all values.  
+
+
+#### Lambda Resource Policies
+
+- Similar to **S3 bucket policies**, every Lambda function has **two security layers**:  
+  1. **Execution Role** – assumed by Lambda to interact with other AWS services.  
+  2. **Resource Policy** – controls who can invoke or manage the function.  
+
+![alt text](images/lambda-resource-policy.png)
+
+- Within the same account, access can be granted using:  
+  - **Identity policies** (attached to IAM users/roles) → “this identity can invoke Lambda.”  
+  - **Resource policies** (attached to Lambda) → “this Lambda can be invoked by this identity.”  
+
+- For **cross-account access**, resource policies must be used in addition to identity policies.  
+
+- By default, a Lambda trusts **only the identity that created it**.  
+  - Example: An S3 bucket cannot invoke the Lambda until you explicitly add a permission in the Lambda **resource policy**.  
 
 ### Step Functions
 
