@@ -3475,24 +3475,68 @@ API Gateway helps **create, manage, and deploy APIs**.
 ![alt text](images/api-gateway.png)
 
 **Stages:** `PROD`, `DEV`, etc.  
-**Canary Deployments** are supported  
-**Caching (per stage):** **Default TTL = 300s** (min: `0s`, max: `3600s`)  
-**Authentication:** Uses **Cognito** or a **Lambda Authorizer**
+**Canary Deployments** are supported.  
+**Caching (per stage):** **Default TTL = 300s** (min: `0s`, max: `3600s`).  
+**Authentication:** Uses **Cognito** or a **Lambda Authorizer**.  
+
+API Gateway can **import or export** Swagger/OpenAPI configurations (Swagger = OpenAPI v2). You can also create endpoints manually.
+
 
 ### API Gateway Endpoint Types
-- **Edge Optimized** → Routes requests via CloudFront for better performance
-- **Regional** → Directly reachable within an AWS Region
-- **Private** → Available only inside a **VPC** via an **Interface Endpoint**
+- **Edge Optimized** → Routes requests via **CloudFront** for global performance.  
+- **Regional** → Directly reachable within an AWS Region.  
+- **Private** → Available only inside a **VPC** via an **Interface Endpoint**.  
+
 
 ### Error Codes
-- **4xx** (Client Errors):  
+- **4xx (Client Errors):**  
   - `400` Bad Request  
   - `403` Access Denied  
   - `429` Too Many Requests (Throttling)  
-- **5xx** (Server Errors):  
+
+- **5xx (Server Errors):**  
   - `502` Bad Gateway  
   - `503` Service Unavailable  
-  - `504` Integration Timeout (29s limit)
+  - `504` Integration Timeout (**29s limit**)  
+
+
+### Stages, Methods, and Resources
+
+The URL to call API Gateway looks like:  
+`https://<dns-name>/<stage>/<resource>`
+
+- **Stage** → like `dev`, `test`, `v1`, `v2`.  
+  - Each stage has its own configuration.  
+  - To apply changes in API Gateway, you must **deploy** them into a stage.  
+  - Stages are **mutable** (can be updated).  
+  - **Stage variables** can be used to configure environment-specific settings (e.g., point to a different Lambda).  
+
+- **Resources** → the actual API endpoints.  
+  - Each resource has one or more **methods** (`GET`, `POST`, etc.).  
+
+### Integrations
+
+In the **integration request/response**, API Gateway either:  
+- **Passes the request/response as-is** (proxy integration).  
+- **Transforms the request/response** to make it compatible with the backend.  
+
+The **method request/response** is the interaction layer with the client.  
+
+![alt text](images/api-gateway-integrations.png)
+
+**Types of Integrations:**
+- **Mock** → Testing without a backend.  
+- **HTTP Endpoint** → Acts as a reverse proxy.  
+  - Can transform input/output or use **HTTP Proxy** mode for passthrough.  
+- **AWS Service** → Exposes AWS services.  
+  - Requires request/response mappings.  
+- **AWS Proxy (Lambda Proxy Integration)** → Passes the full request to Lambda **without transformation**.  
+
+**Mapping Templates**:  
+- Allow modification of parameters, body, and headers.  
+- Can filter or rename fields.  
+- Used in **non-proxy integrations**.  
+- Implemented using **Velocity Template Language (VTL)**.  
 
 ## AWS Glue
 
