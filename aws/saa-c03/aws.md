@@ -1230,8 +1230,78 @@ AWS AppSync is a fully managed service that makes it easy to develop GraphQL API
 
 It enables real-time data synchronization and offline capabilities for applications, making it ideal for building modern, responsive apps. AppSync also integrates with AWS Amplify and provides features like fine-grained access control, subscriptions for real-time updates, and caching to improve performance.
 
-## Elastic Beanstalk
-is a classic Platform as a Service (PaaS) that lets you deploy web applications in popular runtimes (like Java, Node.js, Python) with minimal configuration. It handles provisioning, load balancing, and scaling on your behalf, but still gives access to the underlying resources like EC2 and RDS.
+# Elastic Beanstalk (EB)
+
+Elastic Beanstalk is a **PaaS** service, developer-focused and high-level. It manages the **application environment** for you: the user provides code, and EB handles provisioning and managing the environment.  
+
+EB is **fully customizable** since it uses underlying AWS services. You can define aspects of the infrastructure, but EB manages most of it.  
+
+You may need to adapt your app slightly (you cannot always just drop it onto EB).  
+
+
+### Supported Platforms
+
+EB supports multiple languages and platforms:  
+
+- Languages: Go, Java, .NET, Node.js, Python, Ruby, PHP, etc.  
+- **Docker**: single-container or multi-container setups.  
+- **Preconfigured Docker images**: allows support for a language before it becomes natively supported.  
+- **Custom platforms**: you can use **Packer** to create your own custom EB platform.  
+
+
+### EB Concepts
+
+- **Application**: a collection of components related to the app (code, infrastructure, configuration).  
+- **Application version**: a specific, labeled version of deployable code, stored in **S3** (source bundle).  
+- **Environment (env)**: a sub-part of the application, with its own infrastructure, where you deploy application versions.  
+- **Tier**:  
+  - **Web server tier**: handles incoming HTTP requests.  
+  - **Worker tier**: processes background jobs.  
+  - Web and worker tiers communicate via **SQS queues**. Worker scaling is based on queue depth, web scaling on incoming requests.  
+
+![Elastic Beanstalk diagram](images/beanstalk.png)
+
+### Database Integration
+
+- A database can be **created inside EB** or **externally**.  
+- For **blue/green deployments**, it’s recommended to keep the DB outside EB (since environments may be deleted and take the DB with them).  
+- Use **environment variables** to reference DB connection strings.  
+- If DB is inside EB:  
+  - You can enable **delete protection** on RDS.  
+  - If an environment is deleted, the CloudFormation stack may fail with status `DELETE_FAILED`. You’ll need to manually delete or retain the RDS resources.  
+
+
+### Infrastructure Management
+
+- EB uses **CloudFormation** under the hood to create resources.  
+- **`.ebextensions`**:  
+  - Since EB uses CloudFormation, you can customize resource creation.  
+  - Inside your application bundle, create a `.ebextensions/` folder.  
+  - Add `.config` files (YAML or JSON) with CloudFormation-like syntax.  
+
+You can also **clone environments**:  
+- Creates a new environment with the same configuration.  
+- If RDS is included, it will be cloned but **data is not copied**.  
+
+### Deployment Policies
+
+- **All at once**: deploy to all instances at once (brief outage).  
+- **Rolling**: deploy in batches (reduced capacity during deployment).  
+- **Rolling with additional batch**: deploy in batches, but maintain 100% capacity.  
+- **Immutable**: deploy new instances with the new version, then swap traffic (safer).  
+- **Traffic splitting**: route a percentage of traffic to new instances (used for **A/B testing** or canary deployments).  
+
+### Docker on Elastic Beanstalk
+
+- **Single-container Docker**:  
+  - Runs on EC2 with Docker installed (not ECS).  
+  - Use `Dockerfile` or `Dockerrun.aws.json` (v1).  
+  - Can also use `docker-compose.yaml`.  
+
+- **Multi-container Docker**:  
+  - Uses an **ECS cluster** with an ELB.  
+  - Requires `Dockerrun.aws.json` (v2) inside the application source bundle.  
+
 
 ## AWS App Runner
 is a modern, fully managed service for running **containerized** web apps and APIs directly from source code or container images. It abstracts away all infrastructure, offering a simpler alternative to Beanstalk, especially for microservices and container-native applications.
