@@ -1058,19 +1058,33 @@ Lambda uses **CloudWatch**, **CloudWatch Logs**, and **X-Ray** for monitoring an
 
 *Remember to give Lambda permission to write logs by adding the necessary permissions to the execution role.*
 
+
 #### Invocation
 
-##### Synchronous Invocation
-- Triggered by **CLI/API or API Gateway**.
-- The Lambda function runs and **returns a result immediately** (success or failure).
-- If it fails, the **client is responsible for retrying**.
+##### Call Types
 
-##### Asynchronous Invocation
-- Triggered by AWS services **without waiting for a response**.
-- AWS can **automatically retry up to two times**, but only for **internal failures** (e.g., timeouts, memory issues).
-- **User code exceptions do not trigger automatic retries**—they must be handled explicitly.
-- The Lambda function **must be idempotent** (same input = same result).
-- If the function still fails after retries, the event can be sent to a **Dead Letter Queue (DLQ)** or another service like **SQS, SNS, or another Lambda function**.
+AWS Lambda supports **two main invocation types** — **synchronous** and **asynchronous** — plus a **dry run** mode for validation.
+
+* **Synchronous (RequestResponse) - Default**
+
+  * Invoked directly via **CLI/API, SDK, or API Gateway**.
+  * The caller **waits for the function to finish** and receives the response or error.
+  * Used for **real-time** operations where immediate feedback is needed.
+  * The **client** is responsible for retrying on failure.
+
+* **Asynchronous (Event)**
+
+  * Invoked by **AWS services or custom apps** that **don’t wait** for a response.
+  * The event is queued, and Lambda processes it **in the background**.
+  * AWS automatically retries (up to two times) for internal errors.
+  * Failed events can go to a **Dead Letter Queue (DLQ)**, **SQS**, or **SNS**.
+  * Ideal for **background processing**, like image or data processing.
+
+* **DryRun**
+
+  * Used to **validate permissions and parameters** without running the function.
+
+
 
 ##### Event Source Mapping (Streams)
 - AWS continuously **polls** event sources (e.g., DynamoDB Streams, Kinesis).
@@ -1395,6 +1409,19 @@ You can:
 **Block public access** is an additional setting that prevents public access, implemented due to past issues with unintended public exposure of data.
 
 You need to define CORS policy on the bucket with a json document. The rules are processed in order, the first rule which matches is used.
+
+#### S3 Encryption Enforcement (SSE-KMS)
+
+* The header **`x-amz-server-side-encryption`** specifies the encryption type:
+
+  * `AES256` → **SSE-S3** (Amazon S3–managed keys)
+  * `aws:kms` → **SSE-KMS** (AWS KMS–managed keys)
+
+* The header **`x-amz-server-side-encryption-aws-kms-key-id`** specifies the **exact KMS key** to use.
+
+If you just want to **require encryption**, check (e.g. in bucket policy) for `x-amz-server-side-encryption`. 
+If you want to **enforce a specific KMS key**, also require `x-amz-server-side-encryption-aws-kms-key-id`.
+
 
 ### Static Hosting
 
@@ -2597,6 +2624,9 @@ There are **two SSL connections** in CloudFront:
 1. **Viewer → CloudFront**
 2. **CloudFront → Origin** (both require **public certificates**, private ones do **not** work).
 
+- Viewer Protocol Policy (VPP): Controls how users connect to CloudFront (HTTP, HTTPS, or redirect to HTTPS).
+- Origin Protocol Policy (OPP): Controls how CloudFront connects to your origin (HTTP, HTTPS, or match viewer).
+
 #### Geo Restriction
 There are two types:  
 
@@ -2631,7 +2661,12 @@ CloudFront **fetches** data from an **origin** if it's not found in edge locatio
 
 #### Security from Origin to CloudFront
 ##### For S3 Origins:
-For S3 origins, you can use an Origin Access Identity (OAI) to restrict direct access to your S3 bucket. OAI is a special CloudFront identity that, when associated with a distribution, allows CloudFront to securely fetch content from a private S3 bucket. The bucket policy should block all public access and allow access only through the OAI. Note: OAI does not work with S3 static website hosting endpoints
+For S3 origins, you should use an **Origin Access Control (OAC)** to restrict direct access to your S3 bucket.
+OAC is a secure mechanism that allows **CloudFront to sign and authenticate requests** to your private S3 bucket using **AWS Signature Version 4 (SigV4)**.
+With OAC, your **S3 bucket policy** should **block all public access** and **allow access only through the OAC**.
+OAC supports **HTTPS** and works with both **S3 REST APIs** and **S3 static website hosting endpoints**.
+
+> *Note:* The older **Origin Access Identity (OAI)** method is now **deprecated** and should be replaced by OAC for new CloudFront distributions.
 
 ![alt text](images/cf-oai.png)
 
@@ -3245,7 +3280,16 @@ A table is a grouping of items with the same primary key (single value or compos
   - **1 WCU**: Writes up to 1KB.
 
 - **Query**: Starts with a partition key and optionally a sort key or range. Capacity is consumed based on the size of all returned items. It is often better to retrieve multiple items at once to optimize RCU usage.
-- **Scan**: Moves through a table, consuming capacity for every item (scanning the entire table). You are charged for everything scanned. Querying is more efficient as it searches based on keys, while scanning searches for attributes.
+- **Scan**: Moves through a table, consuming capacity for every item
+
+
+* **Scans are slow and expensive** when used on big tables — especially if your filter removes most of the results. This is because DynamoDB still has to look at **every single item** in the table before filtering.
+* It’s better to use **Query**, **GetItem**, or **BatchGetItem** — these are faster and use less read capacity since they fetch only what you need.
+
+If you really have to use a Scan, you can make it less heavy by:
+
+1. **Reducing page size:** DynamoDB reads data in chunks (called *pages*, by default 1 MB each). If you ask for smaller pages using the `Limit` parameter, DynamoDB pauses between each read — so it uses less capacity at once and doesn’t block other requests.
+2. **Isolating scans:** If your app has to scan a lot, you can run those scans on a different table that isn’t handling critical traffic — for example, a “copy” of your data used just for reporting or analytics.
 
 Data is replicated across different AZs, with a leader storage node responsible for writes. If the leader node fails, a new one is elected.
 
@@ -3958,6 +4002,11 @@ For each resolution, CloudWatch applies a retention period:
 
 As data ages, high resolution becomes less important.
 
+### Alarm parameters:
+– Period is the length of time to evaluate the metric or expression to create each individual data point for an alarm. It is expressed in seconds. If you choose one minute as the period, there is one datapoint every minute.
+– Evaluation Period is the number of the most recent periods, or data points, to evaluate when determining alarm state.
+– Datapoints to Alarm is the number of data points within the evaluation period that must be breaching to cause the alarm to go to the ALARM state. The breaching data points do not have to be consecutive, they just must all be within the last number of data points equal to Evaluation Period.
+
 ### CloudWatch Logs
 
 A public service that can be accessed from both VPC and on-premises environments.
@@ -3991,16 +4040,28 @@ For example:
 - Stream them into a central Kinesis Data Stream
 - Use Kinesis Data Firehose to deliver them to Amazon S3 for storage or analytics.
 
+
 ## X-RAY
 
 AWS X-Ray collects data about requests as they travel through a distributed application, allowing you to visualize the flow of a session across multiple services.
 
-A trace ID is inserted into the tracing header and used to track each request end-to-end. Data is sent to X-Ray in segments (data blocks containing various details) and subsegments (smaller units within a segment).
+A trace ID is inserted into the tracing header and used to track each request end-to-end. Data is sent to X-Ray in **segments** (data blocks containing various details) and **subsegments** (smaller units within a segment).
+Segments record information about requests and responses but **are not searchable** using filter expressions.
 
 X-Ray generates:
 
-- Service Graph – A JSON document detailing the services and resources that make up the application, along with their relationships.
-- Service Map – A visual representation of the service graph, showing traces and performance data..
+* **Service Graph** – A JSON document detailing the services and resources that make up the application, along with their relationships.
+* **Service Map** – A visual representation of the service graph, showing traces and performance data.
+
+When you **instrument your application**, the X-Ray SDK records information about requests, AWS resources, and the application itself. You can also add **custom data** as:
+
+* **Annotations:** Indexed key–value pairs used for filtering and grouping traces (up to 50 per trace).
+* **Metadata:** Non-indexed key–value pairs for storing additional information not used for search.
+
+**Best practice:** Add **custom attributes as annotations** in the segment document if you want to filter or group traces.
+
+**Sampling rules** determine the percentage of requests that X-Ray traces, helping reduce overhead while still providing a representative view of application performance.
+
 
 ## CloudTrail
 
