@@ -479,6 +479,8 @@ Another type of key that KMS can generate using KMS keys. DEKs allow encryption 
 - Both key types support **key material rotation**, but:
   - **AWS-owned keys** have **mandatory** rotation **once a year**.
   - **Customer-managed keys** have **optional** rotation.
+  
+`GenerateDataKey` API generates a unique data key. `GenerateDataKeyWithoutPlaintext` returns only the encrypted copy of the data key.
 
 ### Key Policies
 - KMS **key policies** (similar to resource policies) are **mandatory** for every key.
@@ -1085,7 +1087,6 @@ AWS Lambda supports **two main invocation types** — **synchronous** and **asyn
   * Used to **validate permissions and parameters** without running the function.
 
 
-
 ##### Event Source Mapping (Streams)
 - AWS continuously **polls** event sources (e.g., DynamoDB Streams, Kinesis).
 - A batch of events is sent to the Lambda function.
@@ -1138,6 +1139,7 @@ When a Lambda function starts, the runtime and resources need time to initialize
 - If the function is invoked frequently, the same execution context may be **reused** (**Warm Start**).  
 - **One execution = One execution context.**  
 - If 20 Lambda functions run simultaneously, there will be **20 cold starts**.  
+- The execution context provides disk space in the `/tmp` directory.
 
 To reduce cold starts:  
 - Use **Provisioned Concurrency**, which keeps pre-initialized execution contexts ready.
@@ -1291,7 +1293,7 @@ EB supports multiple languages and platforms:
 - **`.ebextensions`**:  
   - Since EB uses CloudFormation, you can customize resource creation.  
   - Inside your application bundle, create a `.ebextensions/` folder.  
-  - Add `.config` files (YAML or JSON) with CloudFormation-like syntax.  
+  - Add `.config` files (YAML or JSON) with CloudFormation-like syntax (e.g. `xray-daemon.config` to configure X-Ray).
 
 You can also **clone environments**:  
 - Creates a new environment with the same configuration.  
@@ -3534,6 +3536,7 @@ Kinesis is a **real-time, scalable streaming service**.
 - A **shard** defines stream capacity.
 - **1 shard** = **1MB/s ingestion**, **2MB/s consumption**.
 - More shards = **Higher cost**.
+- Usually 1 shard = 1 instance to process it (1 instance can process more than 1 shard)
 
 ![alt text](images/kinesis.png)
 
@@ -3590,7 +3593,7 @@ API Gateway helps **create, manage, and deploy APIs**.
 
 **Stages:** `PROD`, `DEV`, etc.  
 **Canary Deployments** are supported.  
-**Caching (per stage):** **Default TTL = 300s** (min: `0s`, max: `3600s`).  
+**Caching (per stage):** **Default TTL = 300s** (min: `0s`, max: `3600s`).  You can allow only authorized users to invalidate the cache (tick `require authorization` checkbox).
 **Authentication:** Uses **Cognito** or a **Lambda Authorizer**.  
 
 API Gateway can **import or export** Swagger/OpenAPI configurations (Swagger = OpenAPI v2). You can also create endpoints manually.
@@ -3651,6 +3654,14 @@ The **method request/response** is the interaction layer with the client.
 - Can filter or rename fields.  
 - Used in **non-proxy integrations**.  
 - Implemented using **Velocity Template Language (VTL)**.  
+
+### API Keys and Plan
+
+In Amazon API Gateway, **API keys don’t grant access on their own**—they must be linked to a **usage plan** that specifies which API stages/methods the key can call. 
+If a key isn’t associated with a usage plan, requests fail with **403 Forbidden**. After generating a key, **associate it using `CreateUsagePlanKey`**. 
+
+Note: `ImportApiKeys` is for bulk key import and **doesn’t** attach keys to plans, and `UpdateUsagePlan` changes plan properties but **doesn’t** associate keys.
+
 
 ## AWS Glue
 
