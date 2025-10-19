@@ -961,6 +961,15 @@ Both modes have:
 | **Service**            | Deployment / ReplicaSet         | Ensures that a specified number of tasks (pods) are running and replaces failed ones. |
 | **Cluster**            | Kubernetes Cluster             | A logical group of computing resources where containers run. |
 
+### ECS Task Placement Strategies
+
+Amazon ECS uses task placement strategies to determine how tasks are distributed across container instances:
+
+- **binpack** – Places tasks on instances with the least available CPU or memory to minimize the number of instances in use.  
+- **random** – Distributes tasks randomly across available instances.  
+- **spread** – Evenly spreads tasks based on a specified value, such as an attribute key-value pair, `instanceId`, or `host`.
+
+
 ### ECR - Elastic Container Registry
 
 A managed container image registry (like Docker Hub for AWS).
@@ -1060,7 +1069,6 @@ Lambda uses **CloudWatch**, **CloudWatch Logs**, and **X-Ray** for monitoring an
 
 *Remember to give Lambda permission to write logs by adding the necessary permissions to the execution role.*
 
-
 #### Invocation
 
 ##### Call Types
@@ -1068,14 +1076,12 @@ Lambda uses **CloudWatch**, **CloudWatch Logs**, and **X-Ray** for monitoring an
 AWS Lambda supports **two main invocation types** — **synchronous** and **asynchronous** — plus a **dry run** mode for validation.
 
 * **Synchronous (RequestResponse) - Default**
-
   * Invoked directly via **CLI/API, SDK, or API Gateway**.
   * The caller **waits for the function to finish** and receives the response or error.
   * Used for **real-time** operations where immediate feedback is needed.
   * The **client** is responsible for retrying on failure.
 
 * **Asynchronous (Event)**
-
   * Invoked by **AWS services or custom apps** that **don’t wait** for a response.
   * The event is queued, and Lambda processes it **in the background**.
   * AWS automatically retries (up to two times) for internal errors.
@@ -1083,9 +1089,7 @@ AWS Lambda supports **two main invocation types** — **synchronous** and **asyn
   * Ideal for **background processing**, like image or data processing.
 
 * **DryRun**
-
   * Used to **validate permissions and parameters** without running the function.
-
 
 ##### Event Source Mapping (Streams)
 - AWS continuously **polls** event sources (e.g., DynamoDB Streams, Kinesis).
@@ -1205,6 +1209,15 @@ With **layers**, you can separate your own code from the libraries and reuse the
 
 - By default, a Lambda trusts **only the identity that created it**.  
   - Example: An S3 bucket cannot invoke the Lambda until you explicitly add a permission in the Lambda **resource policy**.  
+
+### Concurrent Executions
+
+Concurrent executions represent how many instances of your Lambda function are running at the same time. For non-poll-based event sources (like S3 or API Gateway), each incoming event triggers a new invocation, contributing to concurrency. You can estimate it using the formula:
+
+**concurrent executions = (invocations per second) × (average execution duration in seconds)**
+
+Lambda automatically scales based on demand, starting with a burst capacity (500–3000 concurrent executions depending on the region) and then increasing by 500 per minute. The default regional concurrency limit is **1,000**, which can be increased by requesting a higher limit from AWS.
+
 
 ### Step Functions
 
@@ -1742,6 +1755,11 @@ Additional notes:
 Access Points simplify access management for S3 buckets and objects. Instead of having a single bucket policy, you can create multiple access points, each with its own access point policy and network access controls. 
 
 Each S3 Access Point has its own unique DNS address, allowing network-level access control (e.g., IP filtering, VPC restrictions) to block unauthorized requests before authentication.
+
+### S3 Object Lambda
+
+S3 Object Lambda lets you add custom code to S3 GET requests to transform data on-the-fly without storing a separate copy.  
+Useful for filtering, redacting, resizing, or dynamically processing data during retrieval.
 
 ## Elastic Block Store (EBS)
 
@@ -3288,6 +3306,8 @@ A table is a grouping of items with the same primary key (single value or compos
 * **Scans are slow and expensive** when used on big tables — especially if your filter removes most of the results. This is because DynamoDB still has to look at **every single item** in the table before filtering.
 * It’s better to use **Query**, **GetItem**, or **BatchGetItem** — these are faster and use less read capacity since they fetch only what you need.
 
+A `projection expression` is a string that identifies the attributes you want. To retrieve a single attribute, specify its name. For multiple attributes, the names must be comma-separated.
+
 If you really have to use a Scan, you can make it less heavy by:
 
 1. **Reducing page size:** DynamoDB reads data in chunks (called *pages*, by default 1 MB each). If you ask for smaller pages using the `Limit` parameter, DynamoDB pauses between each read — so it uses less capacity at once and doesn’t block other requests.
@@ -3354,8 +3374,6 @@ TTL enables the automatic deletion of items by setting an expiration timestamp (
 - Expired items are removed from tables, indexes, and streams (if enabled).
 - TTL deletions do not impact table performance and are free.
 - TTL streams (24-hour rolling window of deletions) can be enabled.
-
-
 
 
 ## Amazon ElastiCache
@@ -3980,6 +3998,31 @@ Example:
 - **Deleting an S3 bucket with data is normally impossible**, but a **Lambda function** can be used to:
   - Delete the bucket contents first.
   - Then allow the bucket deletion.
+  
+
+### AWS Serverless Application Model (AWS SAM)
+
+The **AWS Serverless Application Model (AWS SAM)** is an open-source framework that simplifies building, testing, and deploying serverless applications on AWS. It extends AWS CloudFormation with a simplified syntax for defining serverless resources such as **Lambda functions**, **API Gateway APIs**, **DynamoDB tables**, and **Step Functions**.
+
+With AWS SAM, you can:
+
+- **Define** serverless applications using a concise YAML template (`template.yaml`).
+- **Build and test locally** using the `sam local` command to emulate AWS services.
+- **Package and deploy** applications easily with the `sam package` and `sam deploy` commands.
+- **Integrate CI/CD pipelines** with AWS CodePipeline or other tools for automated deployments.
+
+AWS SAM helps developers focus on writing application logic rather than managing infrastructure, while still leveraging the full power of AWS CloudFormation for scalability, security, and configuration management.
+
+#### Transform
+
+The `Transform` section tells CloudFormation to process the template using AWS SAM’s macros:
+```yaml
+Transform: AWS::Serverless-2016-10-31
+````
+
+#### Resources
+
+The `Resources` section in AWS SAM works the same as in standard CloudFormation — it defines all the components of your stack. 
 
 
 ## CloudWatch
@@ -4072,6 +4115,27 @@ When you **instrument your application**, the X-Ray SDK records information abou
 **Best practice:** Add **custom attributes as annotations** in the segment document if you want to filter or group traces.
 
 **Sampling rules** determine the percentage of requests that X-Ray traces, helping reduce overhead while still providing a representative view of application performance.
+
+### ENV variables
+
+- **_X_AMZN_TRACE_ID**  
+  Contains the tracing header with the sampling decision, trace ID, and parent segment ID.  
+  Lambda sets or generates this automatically for tracing.
+
+- **AWS_XRAY_CONTEXT_MISSING**  
+  Defines what the X-Ray SDK does when no tracing header is found.  
+  Default: `LOG_ERROR`.
+
+- **AWS_XRAY_DAEMON_ADDRESS**  
+  Specifies the X-Ray daemon’s address in the format `IP_ADDRESS:PORT`.  
+  Used to send trace data directly to the daemon.
+
+- **AWS_XRAY_TRACING_NAME**
+  Used by the SDK to name service segments, not an environment variable for Lambda tracing.
+
+- **AWS_XRAY_DEBUG_MODE**
+  Enables debug logs in the SDK, unrelated to environment-based tracing setup.
+
 
 
 ## CloudTrail
