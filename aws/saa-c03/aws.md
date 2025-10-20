@@ -1248,6 +1248,11 @@ Step Functions use different **states** to define workflow logic:
 **Reduced Lambda complexity** – Avoids using Lambda just for workflow logic.  
 **Parallel execution & decision making** – Improves efficiency.  
 
+#### waitForTaskToken
+`waitForTaskToken` pauses a **TASK** until an external system signals completion.  
+The token (from the state machine context) is passed to the external process, which later calls `SendTaskSuccess` or `SendTaskFailure` to resume execution.  
+No cost is incurred while paused—ideal for async or event-driven workflows.
+
 ##  Amazon Elastic MapReduce
 Amazon EMR is a managed cluster platform that simplifies running big data frameworks, such as Apache Hadoop and Apache Spark, on AWS to process and analyze vast amounts of data. 
 By using these frameworks and related open-source projects such as Apache Hive and Apache Pig, you can process data for analytics purposes and business intelligence workloads. 
