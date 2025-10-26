@@ -556,6 +556,8 @@ AWS Shield protects against DDoS attacks. **Shield Standard** (covering layers 3
 
 ![alt text](images/cognito-user-pools.png)
 
+With adaptive authentication, you can configure your user pool to block suspicious sign-ins or add second factor authentication in response to an increased risk leve
+
 ### Identity Pools (Authorization)
 - **Provides temporary AWS credentials** for accessing AWS resources.
 - **Supports guest users** (unauthenticated access).
@@ -999,7 +1001,7 @@ EKS integrates with other AWS services.
 ### Node Types:
 - **Self-managed:** EC2 instances managed by you.
 - **Managed Node Groups:** AWS-managed EC2 instances.
-- **Fargate Pods:** Serverless execution of Kubernetes pods.
+- **Fargate Pods:**   execution of Kubernetes pods.
 
 ### Storage Providers:
 Supports persistent storage options like **EBS, EFS,** etc.
@@ -1030,9 +1032,11 @@ Managing servers has a lot of overhead. **Serverless** helps eliminate this comp
 
 ### Lambda
 
-Function as a Service (FaaS) allows you to run a piece of code inside a specific runtime. This function is executed within a runtime environment that you configure with a specific amount of memory (CPU is automatically allocated based on memory).
+Function-as-a-Service (FaaS) allows you to run a piece of code inside a specific runtime. The function executes within a configured runtime environment: you choose the amount of memory (from 128 MB up to 10,240 MB in 1-MB increments) and AWS allocates CPU and other resources proportionally based on that memory. 
 
-Memory ranges from **128MB to 10,240MB** (**for every 1,769MB of memory, you get 1 vCPU**). If a Lambda function is allocated more than **1,792MB**, it can receive **proportional vCPUs** (up to **6 vCPUs at the maximum 10,240MB memory limit**). There is also ephemeral storage, ranging from **512MB to 10,240MB**.
+For example, at around 1,769 MB of memory the function is allocated approximately one full vCPU.  At the maximum memory allocation of 10,240 MB, the function can receive up to six vCPUs. 
+
+There is also ephemeral storage, ranging from **512MB to 10,240MB** in `/tmp` directory.
 
 Lambda is **stateless** (usually), so it should be able to start clean every time.
 
@@ -1073,22 +1077,22 @@ Lambda uses **CloudWatch**, **CloudWatch Logs**, and **X-Ray** for monitoring an
 
 ##### Call Types
 
-AWS Lambda supports **two main invocation types** — **synchronous** and **asynchronous** — plus a **dry run** mode for validation.
+AWS Lambda supports **two main invocation types** with the `invoke` operation — **synchronous** and **asynchronous** — plus a **dry run** mode for validation.
 
-* **Synchronous (RequestResponse) - Default**
+- **Synchronous (RequestResponse) - Default**
   * Invoked directly via **CLI/API, SDK, or API Gateway**.
   * The caller **waits for the function to finish** and receives the response or error.
   * Used for **real-time** operations where immediate feedback is needed.
   * The **client** is responsible for retrying on failure.
 
-* **Asynchronous (Event)**
+- **Asynchronous (Event)**
   * Invoked by **AWS services or custom apps** that **don’t wait** for a response.
   * The event is queued, and Lambda processes it **in the background**.
   * AWS automatically retries (up to two times) for internal errors.
   * Failed events can go to a **Dead Letter Queue (DLQ)**, **SQS**, or **SNS**.
   * Ideal for **background processing**, like image or data processing.
 
-* **DryRun**
+- **DryRun**
   * Used to **validate permissions and parameters** without running the function.
 
 ##### Event Source Mapping (Streams)
@@ -1315,7 +1319,9 @@ EB supports multiple languages and platforms:
 
 You can also **clone environments**:  
 - Creates a new environment with the same configuration.  
-- If RDS is included, it will be cloned but **data is not copied**.  
+- If RDS is included, it will be cloned but **data is not copied**.
+
+`env.yaml` is a simple YAML file specifically meant to define environment variables for your Elastic Beanstalk environment.  
 
 ### Deployment Policies
 
@@ -1343,6 +1349,11 @@ is a modern, fully managed service for running **containerized** web apps and AP
 ## Amazon Lightsail 
 is designed for users who want to quickly launch **simple applications or virtual servers** with predictable pricing. It provides easy-to-use instances, containers, and databases — perfect for small apps, prototyping, or migrating from traditional VPS providers.
 
+### AWS Amplify
+
+**AWS Amplify** is a development platform that simplifies building, deploying, and hosting full-stack web and mobile applications on AWS. It provides tools and services for frontend frameworks like React, Vue, and Angular, as well as mobile platforms such as iOS and Android. Amplify integrates seamlessly with backend resources — including authentication (Amazon Cognito), APIs (AWS AppSync or API Gateway), and storage (Amazon S3, DynamoDB). With built-in CI/CD and easy environment management, Amplify helps developers quickly move from prototype to production with minimal DevOps overhead.
+
+
 ## Comparison Table
 
 | Service              | Type                     | Best For                                     | Infra Management       | Autoscaling           |
@@ -1354,6 +1365,8 @@ is designed for users who want to quickly launch **simple applications or virtua
 | **Lambda**           | Serverless functions     | Event-driven functions, microservices         | Fully abstracted       | Per invocation         |
 | **Raw EC2**          | IaaS                     | Full control apps (DIY setup)                 | Manual (full control)  | Manual                 |
 | **AppSync**          | Managed GraphQL API      | Real-time apps, GraphQL APIs, frontend/backend | Fully abstracted       | Built-in (real-time & cache scaling) |
+| **Amplify**          | Full-stack development platform | Frontend + backend web/mobile apps | Fully abstracted | Built-in (frontend hosting + backend resources) |
+
 
 
 ![alt text](images/compute-types.png)
@@ -3371,7 +3384,6 @@ DAX is an in-memory caching layer integrated into DynamoDB.
 - **Cache types**:
   - **Item cache**: Used for `GetItem`.
   - **Query cache**: Stores query results.
-
   
 ### TTL (Time to Live)
 TTL enables the automatic deletion of items by setting an expiration timestamp (in seconds).
@@ -3379,6 +3391,33 @@ TTL enables the automatic deletion of items by setting an expiration timestamp (
 - Expired items are removed from tables, indexes, and streams (if enabled).
 - TTL deletions do not impact table performance and are free.
 - TTL streams (24-hour rolling window of deletions) can be enabled.
+
+### Concurrency Control in DynamoDB
+
+#### Conditional Writes
+
+- Core feature that allows writes (`PutItem`, `UpdateItem`, `DeleteItem`) only if a condition is true (`ConditionExpression`).
+- Ensures **strong consistency** and prevents overwriting or deleting unexpected data.
+- Examples:
+	- `attribute_not_exists(id)` → insert only if item doesn’t exist.
+	- `status = :open` → update only if the item is still open.
+- Forms the foundation for optimistic locking and other integrity checks.
+
+#### Optimistic Locking (built on Conditional Writes)
+
+- **Idea:** Assume no conflicts — verify before commit.
+- **How:** Each item has a **version attribute**; updates succeed only if the current version matches (`ConditionExpression: "version = :expectedVersion"`).
+- **If conflict:** Update fails → client retries.
+- **Pros:** Fast, scalable, no locks held.
+- **Cons:** Conflicts detected *after* they occur.
+- **Use case:** High-concurrency, low-conflict workloads (e.g., APIs, microservices).
+
+#### Atomic Counters
+
+- Use the `UpdateItem` operation with the `ADD` operator to increment or decrement a numeric attribute **atomically**, without interfering with other write requests.
+- All updates are applied **in the order received**, guaranteeing correct totals even under high concurrency.
+- **Not idempotent:** each call increments the value — repeated retries will increase it again.
+- Ideal for simple counters (e.g., likes, page views, order counts).
 
 
 ## Amazon ElastiCache
