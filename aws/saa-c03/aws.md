@@ -4160,6 +4160,11 @@ When you **instrument your application**, the X-Ray SDK records information abou
 
 **Sampling rules** determine the percentage of requests that X-Ray traces, helping reduce overhead while still providing a representative view of application performance.
 
+The **namespace** field in a subsegment identifies the type of downstream call your application made:
+
+- aws → Used automatically for AWS SDK calls (e.g., DynamoDB, S3, Lambda).
+- remote → Used for external calls (e.g., third-party APIs, external databases).
+
 ### ENV variables
 
 - **_X_AMZN_TRACE_ID**  
