@@ -3602,6 +3602,9 @@ Kinesis is a **real-time, scalable streaming service**.
 
 ![alt text](images/kinesis.png)
 
+**In Amazon Kinesis Data Streams**, use `PutRecord` to write a single record while preserving order with the `SequenceNumberForOrdering` parameter, or use `PutRecords` to write multiple records in a batch for higher throughput—but without guaranteed ordering since individual record failures don’t halt the batch.
+
+
 ### SQS vs. Kinesis
 | Feature  | SQS | Kinesis |
 |----------|----|---------|
