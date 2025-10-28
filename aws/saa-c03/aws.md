@@ -3826,6 +3826,11 @@ AWS provides all the tools needed for a developer pipeline, along with orchestra
   7. `ValidateService`  
 - Supports **in-place** and **blue/green** deployments.  
 
+Two deployment types:
+
+- **In-place**: stops, updates, and restarts apps on existing EC2/on-premises instances (agent required).
+- **Blue/green**: shifts traffic to new instances, Lambda versions, or ECS task sets.
+
 # Amazon ML
 
 ## Amazon Comprehend
