@@ -1196,6 +1196,12 @@ With **layers**, you can separate your own code from the libraries and reuse the
   - Without multi-value headers, the Lambda receives only `test1`.  
   - With multi-value headers enabled, the ALB passes `multiValueQueryStringParameters`, which contains an array of all values.  
 
+#### Lambda Authorizers
+
+There are two types of Lambda authorizers:
+
+– A token-based Lambda authorizer (also called a TOKEN authorizer) receives the caller’s identity in a bearer token, such as a JSON Web Token (JWT) or an OAuth token.
+– A request parameter-based Lambda authorizer (also called a REQUEST authorizer) receives the caller’s identity in a combination of headers, query string parameters, stageVariables, and $context variables.
 
 #### Lambda Resource Policies
 
@@ -3367,7 +3373,7 @@ Stream views:
 - **Old image**: Stores the previous version before a change.
 - **New and old images**: Stores both versions.
 
-Streams can trigger AWS Lambda functions to automate actions upon data changes.
+Streams can trigger AWS Lambda functions to automate actions upon data changes. The Kinesis Adapter is the recommended way to consume streams from DynamoDB for real-time processing
 
 ### Global Tables
 Multi-master cross-region replication allows tables to be created in multiple regions with automatic replication. The "last writer wins" strategy resolves conflicts.
@@ -3816,15 +3822,19 @@ AWS provides all the tools needed for a developer pipeline, along with orchestra
   - **Files** (EC2/on-premises): which files to copy and where.  
   - **Resources** (ECS/Lambda): which services/functions to update.  
   - **Permissions** (EC2/on-premises): which user/group owns the files.  
+  
 - **Lifecycle event hooks** define scripts or commands to run at specific stages:  
-  1. `ApplicationStop`  
-  2. `DownloadBundle`  
-  3. `BeforeInstall`  
-  4. `Install`  
-  5. `AfterInstall`  
-  6. `ApplicationStart`  
-  7. `ValidateService`  
-- Supports **in-place** and **blue/green** deployments.  
+	- EC2
+	  1. `ApplicationStop`  
+	  2. `DownloadBundle`  
+	  3. `BeforeInstall`  
+	  4. `Install`  
+	  5. `AfterInstall`  
+	  6. `ApplicationStart`  
+	  7. `ValidateService`   
+    - Lambda
+	  1. `BeforeAllowTraffic`
+	  2. `AfterAllowTraffic`
 
 Two deployment types:
 
