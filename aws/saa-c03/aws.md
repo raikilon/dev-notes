@@ -318,6 +318,14 @@ They are usually created by the service itself, or the service allows you to cre
 - `PassRole` allows a user to configure a service with a role but **does not grant permission to modify the role** → ensures role separation (you need also permission to add a role to a service).
 
 
+### IAM Policy Simulator
+
+The **IAM Policy Simulator** is a tool that helps you **test and troubleshoot AWS Identity and Access Management (IAM) policies**. 
+It lets you simulate and evaluate the permissions granted by user, group, or role policies without actually making live AWS requests. 
+
+By running simulations, you can verify whether specific actions on selected AWS resources are **allowed or denied**, helping ensure your IAM policies are correctly configured and secure.
+
+
 ## AWS Security Token Service (STS)
 
 AWS Security Token Service (STS) generates **temporary security credentials**.  
@@ -3501,7 +3509,11 @@ Key Features:
 
 SQS is a **highly available, fully managed queue service**. It is **region-resilient** and supports two types of queues:
 1. **Standard Queue** → **At least once delivery**, **best-effort ordering**.
-2. **FIFO Queue** → **Exactly once delivery**, **ordered messages** (`.fifo` suffix required).
+2. **FIFO Queue** → **Exactly once delivery**, **ordered messages** (`.fifo` suffix required). 
+
+To support deduplication, FIFO queues use a MessageDeduplicationId—a unique token identifying each message. 
+When a message with a specific deduplication ID is successfully sent, any new messages with the same ID within the next five minutes are accepted but not delivered again. 
+To further minimize duplicate processing, developers can assign custom deduplication IDs or enable ContentBasedDeduplication, allowing SQS to automatically generate an SHA-256 hash of the message body as the deduplication key.
 
 Key Features:
 - **Message Size:** Up to **256KB** (or use S3 for larger payloads).
@@ -3720,11 +3732,19 @@ The **method request/response** is the interaction layer with the client.
   - Requires request/response mappings.  
 - **AWS Proxy (Lambda Proxy Integration)** → Passes the full request to Lambda **without transformation**.  
 
+
 **Mapping Templates**:  
 - Allow modification of parameters, body, and headers.  
 - Can filter or rename fields.  
 - Used in **non-proxy integrations**.  
 - Implemented using **Velocity Template Language (VTL)**.  
+
+### Lambda non-proxy Request-Response Stages
+
+1. **Method Request** – Validates client input and ensures required parameters (e.g., query strings, headers) are present.
+2. **Integration Request** – Maps the validated request to the backend service (like a Lambda function).
+3. **Integration Response** – Maps and transforms the backend’s response back to API Gateway.
+4. **Method Response** – Defines how the final response (status codes, models) is returned to the client.
 
 ### API Keys and Plan
 
