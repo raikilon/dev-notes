@@ -1457,6 +1457,10 @@ You can:
 
 You need to define CORS policy on the bucket with a json document. The rules are processed in order, the first rule which matches is used.
 
+
+To perform a multipart upload with encryption using an AWS KMS key, the requester must have permission to the `kms:Decrypt` and `kms:GenerateDataKey*` actions on the key. 
+These permissions are required because Amazon S3 must decrypt and read data from the encrypted file parts before it completes the multipart upload.
+
 #### S3 Encryption Enforcement (SSE-KMS)
 
 * The header **`x-amz-server-side-encryption`** specifies the encryption type:
@@ -3072,6 +3076,9 @@ It integrates with AWS Transit Gateway and VPC routing to deliver **centralized,
 - Certificates can be **deployed to supported services** (e.g., **CloudFront, ALB** but **not EC2**).
 
 ![alt text](images/ACM.png)
+
+Use IAM as a certificate manager only when you must support HTTPS connections in a Region that is not supported by ACM.
+
 
 # Databases
 
