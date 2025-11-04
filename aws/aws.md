@@ -3185,7 +3185,7 @@ RDS backups are stored in **S3** but are **only visible in the RDS console** (no
 - **Encryption is permanent once enabled** (cannot be removed).  
 
 #### Additional Encryption Support:
-- **RDS MSSQL and Oracle** support **TDE (Transparent Data Encryption)** at the database level.  
+- **RDS MSSQL and Oracle** support **TDE (Transparent Data Encryption)** at the database level.  TDE automatically encrypts data before it is written to storage, and automatically decrypts data when the data is read from storage.
 - **Oracle** supports **CloudHSM** for AWS-independent encryption.  
 
 ![alt text](images/rds-encryption.png)
@@ -4264,7 +4264,6 @@ For customized logging, you need to create one or more Trails.
 - You can have **one trail for management events per region for free**.
 - **Data events are always charged**.
 
-
 ## Systems Manager Parameter Store
 
 ### Why Avoid Passing Credentials in User Data?
@@ -4283,6 +4282,15 @@ For customized logging, you need to create one or more Trails.
 - Can access specific entries or retrieve multiple parameters using a hierarchical path
 - **SecureString parameters** use **KMS encryption** with distinct permissions
 - Supports **Standard** and **Advanced** parameter tiers
+
+#### Parameter Policies (Advanced Tier Only)
+
+Used to manage large parameter sets by enforcing lifecycle rules:
+
+* **Expiration** — deletes the parameter at a set date
+* **ExpirationNotification** — triggers an EventBridge (CloudWatch Events) notification at expiration
+* **NoChangeNotification** — triggers an EventBridge event if unchanged for a defined period
+
 
 ## Secrets Manager
 
