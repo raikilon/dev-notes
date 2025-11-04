@@ -274,7 +274,7 @@ If you are dealing with multiple accounts, both must allow the action (e.g., acc
 - No nested groups.
 
 #### Limits:
-- **300 groups per account** (can be increased via a support ticket).
+**300 groups per account** (can be increased via a support ticket).
 
 **Important:** Groups are not true identities and cannot be referenced as principals in policies.
 
@@ -407,7 +407,9 @@ A well-architected multi-account environment based on AWS best practices. It sta
 - Uses **IAM Identity Center** (formerly AWS SSO) for single sign-on across multiple accounts and identity federation.
 - Enables monitoring and notifications through **CloudWatch and SNS**.
 
-**AWS Control Tower** leverages **AWS Service Catalog** to deploy and manage standardized blueprints—called **Account Factory products**—for provisioning new AWS accounts. These products are preconfigured with guardrails, network settings, and best practices to ensure consistency and compliance across the environment. This allows organizations to automate account creation while maintaining governance and control over configurations.
+**AWS Control Tower** leverages **AWS Service Catalog** to deploy and manage standardized blueprints called **Account Factory products** for provisioning new AWS accounts. 
+
+These products are preconfigured with guardrails, network settings, and best practices to ensure consistency and compliance across the environment. This allows organizations to automate account creation while maintaining governance and control over configurations.
 
 #### Guardrails
 
@@ -864,7 +866,7 @@ Bootstrapping automates system configuration, allowing an EC2 instance to self-c
   - Bootstrapping (configures the instance at launch)
   - AMI baking (pre-configuring instances with required software)
   - A combination of both for flexibility
-  -
+  
 #### CloudFormation Init (cfn-init)
 - Another method for passing complex configurations to EC2 instances
 - Classified as a helper script
@@ -1021,6 +1023,7 @@ Supports persistent storage options like **EBS, EFS,** etc.
 Amazon EKS supports dynamic scaling of compute resources through two key mechanisms: **Cluster Autoscaler** and **Karpenter**. 
 
 The **Cluster Autoscaler** is a Kubernetes-native component that automatically increases or decreases the number of nodes in a cluster based on pod resource requests and scheduling status. It works with predefined node groups and integrates closely with EKS-managed infrastructure. 
+
 **Karpenter**, on the other hand, is a flexible, open-source provisioning tool that reacts to unschedulable pods by launching right-sized instances on demand, without relying on fixed node group configurations. It offers faster scaling, instance-type flexibility, and improved cost efficiency, making it well-suited for modern, dynamic workloads. 
 
 Both tools aim to ensure that applications have the compute capacity they need while minimizing manual intervention. Karpenter is faster to react and require less configuration.
@@ -1208,8 +1211,9 @@ With **layers**, you can separate your own code from the libraries and reuse the
 
 There are two types of Lambda authorizers:
 
-– A token-based Lambda authorizer (also called a TOKEN authorizer) receives the caller’s identity in a bearer token, such as a JSON Web Token (JWT) or an OAuth token.
-– A request parameter-based Lambda authorizer (also called a REQUEST authorizer) receives the caller’s identity in a combination of headers, query string parameters, stageVariables, and $context variables.
+- A token-based Lambda authorizer (also called a TOKEN authorizer) receives the caller’s identity in a bearer token, such as a JSON Web Token (JWT) or an OAuth token.
+
+- A request parameter-based Lambda authorizer (also called a REQUEST authorizer) receives the caller’s identity in a combination of headers, query string parameters, stageVariables, and $context variables.
 
 #### Lambda Resource Policies
 
@@ -2475,7 +2479,7 @@ When creating a public hosted zone, Route 53 automatically assigns **four public
 
 ![walking the tree](images/route-54.png)
 
--The Hosted Zone is like a Database (DB): It stores all DNS records (A, CNAME, MX, TXT, etc.), similar to how a database stores structured information.
+- The Hosted Zone is like a Database (DB): It stores all DNS records (A, CNAME, MX, TXT, etc.), similar to how a database stores structured information.
 - The Name Servers are like Compute Units: They handle the actual DNS resolution by responding to queries and directing traffic to the correct IP address.
 
 ### Private Hosted Zones
@@ -4041,7 +4045,7 @@ When a logical resource is removed from a template, by default, the correspondin
   - **`Retain`** (preserves the resource)  
   - **`Snapshot`** (if supported, e.g., for EBS, RDS)
 
-❗ **Note:** The DeletionPolicy applies **only to deletions**, **not to modifications** that trigger resource recreation.
+**Note:** The DeletionPolicy applies **only to deletions**, **not to modifications** that trigger resource recreation.
 
 ### Stack Roles
 By default, CloudFormation uses **the IAM identity of the stack creator** to create physical resources.  
@@ -4107,7 +4111,7 @@ AWS SAM helps developers focus on writing application logic rather than managing
 The `Transform` section tells CloudFormation to process the template using AWS SAM’s macros:
 ```yaml
 Transform: AWS::Serverless-2016-10-31
-````
+```
 
 #### Resources
 
@@ -4146,9 +4150,9 @@ For each resolution, CloudWatch applies a retention period:
 As data ages, high resolution becomes less important.
 
 ### Alarm parameters:
-– Period is the length of time to evaluate the metric or expression to create each individual data point for an alarm. It is expressed in seconds. If you choose one minute as the period, there is one datapoint every minute.
-– Evaluation Period is the number of the most recent periods, or data points, to evaluate when determining alarm state.
-– Datapoints to Alarm is the number of data points within the evaluation period that must be breaching to cause the alarm to go to the ALARM state. The breaching data points do not have to be consecutive, they just must all be within the last number of data points equal to Evaluation Period.
+- **Period** is the length of time to evaluate the metric or expression to create each individual data point for an alarm. It is expressed in seconds. If you choose one minute as the period, there is one datapoint every minute.
+- **Evaluation Period** is the number of the most recent periods, or data points, to evaluate when determining alarm state.
+- **Datapoints to Alarm** is the number of data points within the evaluation period that must be breaching to cause the alarm to go to the ALARM state. The breaching data points do not have to be consecutive, they just must all be within the last number of data points equal to Evaluation Period.
 
 ### CloudWatch Logs
 
