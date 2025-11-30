@@ -1,16 +1,5 @@
 # Introduction & Fundamentals
 
-*   **Terraform is a tool for building, changing, and versioning infrastructure safely and efficiently.**
-*   It falls under the category of **Infrastructure as Code (IaC) tools.**
-*   IaC allows you to define your entire cloud infrastructure as a set of config files.
-*   Terraform interacts with cloud provider APIs to provision and manage resources on your behalf.
-*   The course assumes familiarity with basic programming and Amazon Web Services (AWS).
-*   The course covers a progression from basics to modular, automated infrastructure code deploying to staging and production.
-*   It alternates between theory and hands-on examples.
-*   A reference architecture of a basic web application on AWS is used throughout the course, including EC2, ELB, RDS, S3, and Route 53 within the default VPC.
-*   The choice of AWS is for simplicity, **Terraform is cloud-agnostic and can interact with anything with an API.**
-*   A companion GitHub repository contains the code examples organised by module.
-
 ## Infrastructure as Code (IaC)
 
 *   IaC allows you to define your entire infrastructure within your codebase.
@@ -21,7 +10,7 @@
     *   Using the power of programming languages for configuration.
 *   Categories of IaC tools:
     *   Ad hoc scripts (e.g., shell scripts) - borderline IaC.
-    *   Configuration Management tools (Ansible, Puppet, Chef) - focus on software configuration, more suited for on-prem.
+    *   Configuration Management tools (Ansible, Puppet, Chef) - focus on software configuration.
     *   Server Templating tools (e.g., Packer for AMIs) - building templates for server images.
     *   Orchestration tools (e.g., Kubernetes) - defining application deployment, less about the underlying servers.
     *   **Provisioning tools (e.g., Terraform) - focused on provisioning cloud resources.**
@@ -30,7 +19,7 @@
     *   Imperative: Tell the system what to do and the sequence.
 *   **Cloud-specific vs. Cloud-agnostic tools:**
     *   Cloud-specific (CloudFormation, Azure Resource Manager, Google Cloud Deployment Manager) - work within a single cloud.
-    *   **Cloud-agnostic (Terraform, Pulumi) - can be used across multiple clouds and services with APIs.** Useful for multi-cloud or third-party services.
+    *   **Cloud-agnostic (Terraform) - can be used across multiple clouds and services with APIs.** Useful for multi-cloud or third-party services.
 
 # Core Concepts
 ## Terraform Architecture (Core, Providers, State, Registry)
@@ -46,15 +35,14 @@
     *   `terraform` block to specify required providers (and versions).
     *   `provider` block to configure the provider (e.g., AWS region).
     *   `resource` block to define infrastructure resources (e.g., `aws_instance`) with attributes (AMI, instance type).
-## Declarative vs Imperative; Cloud-agnostic vs Cloud-native
-*   **Cloud-agnostic and compatible with many clouds and services with APIs.**
-*   Terraform can be used with other IaC tools:
-    *   Terraform (provisioning) + Ansible (configuration management).
-    *   Terraform (provisioning) + Packer (image templating).
-    *   Terraform (provisioning) + Kubernetes (orchestration).
+## Declarative vs Imperative;
+Terraform can be used with other IaC tools:
+*   Terraform (provisioning) + Ansible (configuration management).
+*   Terraform (provisioning) + Packer (image templating).
+*   Terraform (provisioning) + Kubernetes (orchestration).
 # Getting Started
 ## Install & CLI Basics
-* Download the Terraform CLI binary for your OS from developer.hashicorp.com/terraform/downloads, unzip it, and place it on your `PATH`.
+* Install the Terraform CLI binary for your OS.
 * Verify installation with `terraform version`; enable shell completion with `terraform -install-autocomplete`.
 * Use `terraform -help` to list commands and `terraform <command> -help` for command-specific flags.
 * Authenticate to HCP Terraform with `terraform login`; remove local credentials with `terraform logout`. Tokens are stored in `~/.terraformrc` (or `terraform.rc` on Windows).
@@ -73,29 +61,24 @@
 ## init / plan / apply / destroy
 **Terraform's primary function is to create, modify, and destroy infrastructure resources** to match the desired state described in a Terraform configuration. It follows a **declarative** approach – you define *what* you want, Terraform figures out *how* to achieve it.
 The Terraform lifecycle consists of four primary phases:
-- **`init`** (initialize backend, download providers/modules)
-- **`plan`** (determine changes needed)
-- **`apply`** (execute planned changes)
-- **`destroy`** (remove managed resources).
+- **`init`** Initialises the project, downloads providers and modules (initialize backend, download providers/modules)
+- **`plan`** Shows the changes that will be applied to reach the desired state (determine changes needed)
+- **`apply`** Provisions or modifies the infrastructure (execute planned changes)
+- **`destroy`** Tears down all the resources managed by Terraform (remove managed resources).
+
 ![alt text](images/lifecycle.png)
 
-*   **General workflow:**
-    1.  **`terraform init`:** Initialises the project, downloads providers and modules.
-    2.  **`terraform plan`:** Shows the changes that will be applied to reach the desired state.
-    3.  **`terraform apply`:** Provisions or modifies the infrastructure.
-    4.  **`terraform destroy`:** Tears down all the resources managed by Terraform.
 *   **Terraform Provider Registry (registry.terraform.io):** A list of available providers (official and community). Official providers have a higher level of trust.
 *   Providers are used in code by specifying them in the `required_providers` block within the `terraform` block and can be version-pinned. Each provider may have required configuration (e.g., region for AWS).
 
 
-## Terraform Init Deep Dive
+## Deep Dive
 
 *   When you run `terraform init` in a directory with Terraform code:
     *   It downloads the providers specified in the `terraform` block from the Terraform Registry or other configured registries.
     *   The provider code is stored in a `.terraform` hidden directory within the working directory.
     *   A **lock file** is created (`.terraform.lock.hcl`) which contains information about the specific provider versions and dependencies used.
     *   If any modules are used in the configuration, `terraform init` will also download those into a `.terraform/modules` subdirectory.
-## Plan/Apply nuances (-refresh-only, destroy plans)
 *   **`terraform plan`:**
     *   Takes your Terraform configuration (desired state).
     *   Compares it with the Terraform state (actual deployed state).
@@ -106,14 +89,12 @@ The Terraform lifecycle consists of four primary phases:
     *   Makes the necessary API calls to the cloud provider to provision or modify the resources.
     *   Updates the Terraform state file to reflect the new state of the infrastructure.
 *   **Targeted and replacement changes:**
-    *   `-replace=ADDR` (plan/apply) forces replacement of a resource; preferred over manual tainting.
-    *   `-target=ADDR` applies only part of the graph and is discouraged except for break-glass scenarios because it can create partial state.
+    *   `-replace=ADDR` (plan/apply) forces replacement of a resource.
+    *   `-target=ADDR` (plan/apply)  applies only part of the graph (and is discouraged except for break-glass scenarios because it can create partial state).
 *   **Refresh control and locking:**
-    *   `-refresh-only` checks for drift without changing resources.
-    *   `-refresh=false` skips state refresh (discouraged unless you need a fast, known-good plan).
+    *   `-refresh-only` (plan/apply) checks for drift without changing resources.
+    *   `-refresh=false` (plan/apply) skips state refresh (discouraged unless you need a fast, known-good plan).
     *   `-lock` and `-lock-timeout` control backend locking when supported.
-## Terraform Destroy Deep Dive
-
 *   **`terraform destroy`:**
     *   Reverses the actions of `terraform apply`.
     *   Deletes all the resources managed by the current Terraform configuration.
@@ -123,7 +104,8 @@ The Terraform lifecycle consists of four primary phases:
 * `terraform output` prints output values; use `-json` for machine-readable output.
 * `terraform console` evaluates expressions against the current configuration and state for debugging.
 * `terraform graph` emits the dependency graph in DOT format (often piped to `dot` or `xdot` to visualize).
-* `terraform state` subcommands inspect and manipulate state; prefer configuration-driven moves (`moved` blocks) over direct state edits when possible.
+* `terraform state` subcommands inspect and manipulate state.\
+
 # Configuration Building Blocks
 ## Providers
 Plugins that allow Terraform to interact with various infrastructure platforms and services (AWS, Azure, GCP, Kubernetes, etc.). They abstract API interactions.
