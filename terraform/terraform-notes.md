@@ -109,17 +109,14 @@ The Terraform lifecycle consists of four primary phases:
 # Configuration Building Blocks
 ## Providers
 Plugins that allow Terraform to interact with various infrastructure platforms and services (AWS, Azure, GCP, Kubernetes, etc.). They abstract API interactions.
-## Resources & Data Sources
-* **Resources:** Manage lifecycle of infrastructure objects. Declared with `resource "<PROVIDER>_<TYPE>" "<NAME>" { ... }` and tracked in state.
-* **Data Sources:** Read-only views of existing objects or helper data. Declared with `data "<PROVIDER>_<TYPE>" "<NAME>" { ... }` and do not create or manage resources.
-## Variables, Locals, Outputs (types, sensitivity, precedence)
-### Data Sources (`data`)
+## Resources
+Manage lifecycle of infrastructure objects. Declared with `resource "<PROVIDER>_<TYPE>" "<NAME>" { ... }` and tracked in state.
+## Data Sources (`data`)
  Fetch information *from* a provider about existing resources or compute data for use elsewhere in the configuration (e.g., `data "aws_ami" "latest_ubuntu"`).
 
-### Variables (`variable`)
- Parameterize configurations, removing hard-coded values. Define inputs to your configuration or modules. Commonly declared in `variables.tf`. (See *Variables* section for more detail).
+## Variables (`variable`)
+ Parameterize configurations, removing hard-coded values. Define inputs to your configuration or modules. Commonly declared in `variables.tf`. 
 
-### Declaration (`variables.tf`)
 * Define input variables using `variable "name" { ... }`.
 * **`type`:** Specifies the expected data type (`string`, `number`, `bool`, `list(...)`, `set(...)`, `map(...)`, `object({...})`, `tuple([...])`). Enforces type constraints.
 * **`description`:** Explains the variable's purpose. Crucial for documentation and module usability.
@@ -128,26 +125,54 @@ Plugins that allow Terraform to interact with various infrastructure platforms a
 * **`validation { ... }`:** Defines custom rules (`condition`, `error_message`) to validate input values.
 
 ### Setting Variable Values (Precedence Order - Lowest to Highest)
-1.  Prompted at the command line (if no default).
-2.  Defaults within `variable` blocks.
-3.  Values from `terraform.tfvars` file (or `*.auto.tfvars`).
-4.  Values from `-var-file=<filename>.tfvars` CLI argument.
-5.  Values from `-var='name=value'` CLI argument.
-6.  Environment variables prefixed with `TF_VAR_` (e.g., `TF_VAR_region=us-east-1`).
-7.  *For HCP Terraform:* Run Specific Variables (API triggered runs)
-8.  *For HCP Terraform:* Workspace-Specific Variables (Terraform or Environment).
-9.  *For HCP Terraform:* Variables from applied Variable Sets (last applied wins in case of conflict).
+
+#### CLI Terraform
+1. Default values in variable blocks
+2. Environment variables (TF_VAR_name)
+3. terraform.tfvars (or terraform.tfvars.json)
+4. *.auto.tfvars (in lexical order)
+5. -var-file=<file>.tfvars
+6. -var="name=value" (CLI)
+
+#### HCP Terraform
+1. Global Variable Sets
+2. Workspace-specific Variable Sets
+3. Workspace Variables (set in the UI)
+4. Environment Variables (TF_VAR_name in the workspace environment)
+5. Run-specific variables (API-triggered or VCS)
+6. CLI overrides (-var-file, -var) if using CLI-driven runs
 
 ![alt text](images/variable-pecedence.png)
 
 ### HCP Terraform Variables
-* **Terraform Variables:** Standard input variables for the configuration.
-* **Environment Variables:** Set environment variables for the Terraform execution environment (e.g., provider credentials like `AWS_ACCESS_KEY_ID`, Terraform behavior like `TF_LOG`).
-* **Scope:** Set at Workspace level or via **Variable Sets**.
-* **Variable Sets:** Reusable collections of variables applied to multiple workspaces. Can be global or specific to projects.
-* Management: Via UI, API, or `tfe` provider (`tfe_variable`, `tfe_variable_set`).
-* Permissions: Specific permissions required for viewing/managing variables.
-* Storage Considerations: Choose between Workspace Vars, Variable Sets, or checked-in `*.auto.tfvars` based on scope, sensitivity, and sharing needs. Avoid hardcoding secrets; use sensitive variables and secure storage (like HCP Vars or Vault).
+
+#### Terraform Input Variables
+
+* Values for variables defined in the Terraform configuration.
+* Set in workspace variables, variable sets, or `.tfvars` files.
+* Control configuration behavior (e.g., region, size, replicas).
+
+#### Environment Variables
+
+* Passed to the Terraform runtime (e.g., provider credentials, `TF_LOG`).
+* Can be sensitive.
+* Scoped to a workspace or delivered through variable sets.
+
+#### Variable Sets
+
+Reusable collections of variables that can be attached to one or many workspaces.
+
+* **Global:** Apply to all workspaces.
+* **Project / Workspace-specific:** Apply to selected workspaces.
+* Ideal for shared credentials or common settings.
+* Managed via UI, API, or `tfe` provider.
+
+#### Storage & Scope Guidelines
+
+* **Workspace Vars:** Use for values unique to that workspace.
+* **Variable Sets:** Use for shared values across workspaces.
+* **tfvars files:** Only for non-sensitive, version-controlled inputs.
+* **Secrets:** Store as sensitive variables or in external secret managers (e.g., Vault).
 
 ### Outputs (`output`)
  Expose values from your configuration (e.g., an IP address, a resource ID) for use by other Terraform configurations or for user information.
@@ -163,8 +188,6 @@ Assign a short name to a complex expression, make code DRY (Don't Repeat Yoursel
 Can reference variables (`var.`), other locals (`local.`), resource attributes (`resource.type.name.attr`), etc.
 
 Evaluated *after* variables but *before* resources.
-
-**Referenced using:** `local.NAME`.
 
 **Use Case:** Constructing complex strings, deriving values conditionally, creating reusable data structures.
 ```hcl
@@ -183,25 +206,7 @@ resource "aws_instance" "web" {
   name = local.instance_name
 }
 ```
-### Locals (`locals`)
- Define named expressions within a module to simplify complex logic or avoid repetition. (See *Locals Block* section).
 
-*   **Variables (Input Variables):**
-    *   Used to make Terraform configurations more flexible and reusable.
-    *   Referenced using `var.variable_name`.
-    *   Declared in `variable` blocks with a name and optionally a type and default value.
-    *   Like input parameters to a function.
-*   **Local Variables:**
-    *   Defined within `locals` block (plural) and referenced using `local.variable_name`.
-    *   Like temporary variables within a function's scope.
-    *   Useful for reusing values within a configuration.
-*   **Output Variables:**
-    *   Declared in `output` blocks with a name and a value (expression).
-    *   Like the return value of a function.
-    *   Allow you to expose values from your infrastructure (e.g., IP addresses).
-*   **Sensitive Data:** Mark sensitive variables with `sensitive = true` in the `variable` block. Avoid putting sensitive values in `.tfvars` files; use environment variables or `-var` flags, potentially retrieving from secret stores. Sensitive outputs are masked in the Terraform plan.
-*   **Examples:** Demonstrates defining variables in `variables.tf`, providing default values in `terraform.tfvars`, and passing sensitive values via `-var`. Outputs for instance and database IPs are shown.
-*   **Refactoring Web App with Variables:** Shows how the hardcoded values in the web app configuration are replaced with variables (region, instance type, bucket name, domain, database credentials). This allows for deploying multiple similar environments by just changing variable values.
 # Provisioners
 
 *   **Provisioners allow you to execute actions on a local or remote machine after a resource is created.**
@@ -213,19 +218,9 @@ resource "aws_instance" "web" {
 *   Use cases:
     *   Running a startup script on an EC2 instance.
     *   Integrating with configuration management tools like Ansible.
-*   Provisioners should be used sparingly as they can make infrastructure management less predictable. Consider using cloud-init or baked-in configurations instead where possible (note: this last part is implied but not explicitly stated in the source).
+*   Provisioners should be used sparingly as they can make infrastructure management less predictable. Consider using cloud-init or baked-in configurations instead where possible.
 
 ## Functions & Expressions
-
-*   **Expressions:**
-    *   Template strings (string interpolation).
-    *   Operators (arithmetic, comparison, logical).
-    *   Conditionals (ternary syntax).
-    *   Collections (for loops for lists, splat operator for expanding lists).
-    *   Dynamic blocks.
-    *   Type and version constraints.
-*   **Functions:** Built-in functions for math, date/time, hash and crypto, string manipulation, collections, etc.. Refer to Terraform documentation for details.
-
 ### Expressions
 
 Used on the right side of assignments (`=`) and within blocks.
@@ -242,19 +237,6 @@ Range from simple literals (`"hello"`, `123`, `true`, `["a", "b"]`, `{key = "val
 * **Conditional:** `condition ? true_val: false_val`. (See *Conditional Expressions*).
 * **Collection Transformations:** `for` expressions, splat (`[*]`) expressions. (See below).
 * **String Templates/Interpolation:** `"Hello, ${var.name}!"`.
-
-### Conditional Expressions
-
-Enable conditional logic within assignments. Ternary operator style.
-
-`condition ? value_if_true: value_if_false`.
-
-
-```hcl
-locals {
-  instance_type = var.environment == "prod" ? "m5.large": "t3.micro"
-}
-```
 
 ### For Expressions
 
@@ -354,7 +336,7 @@ Customizes the lifecycle behavior of a resource.
 
 ### `provider` Meta-Argument
 
-*Specifies which provider configuration to use for a resource or module when multiple configurations exist for the same provider (e.g., deploying to multiple AWS regions using provider aliases).
+Specifies which provider configuration to use for a resource or module when multiple configurations exist for the same provider (e.g., deploying to multiple AWS regions using provider aliases).
 
 `provider = aws.secondary_region`
 
@@ -376,6 +358,7 @@ Built-in tools for transforming or combining values within expressions. Cannot d
 * **Date/Time:** `timestamp()`, `formatdate()`, `timeadd()` (**Caution:** `timestamp()` produces a new value on each run, potentially causing plan diffs).
 * **Hashing/Crypto:** `md5()`, `sha1()`, `sha256()`, `uuid()` (**Caution:** `uuid()` produces a new value on each run).
 * **IP Network:** `cidrhost()`, `cidrnetmask()`, `cidrsubnet()`
+
 ## Dynamic Blocks
 
 Dynamically construct multiple **nested blocks** (like `ingress`, `setting`, `rule`) within a `resource`, `data`, `provider`, or `provisioner` block.
@@ -422,6 +405,7 @@ resource "aws_security_group" "web_sg" {
 }
 ```
 **Consider Alternatives:** While powerful, dynamic blocks can sometimes reduce clarity. Ask if defining multiple distinct resource blocks or using a different resource type might be simpler. Use them to create clean abstractions or handle truly dynamic nested configurations.
+
 # State & Backends
 
 ### State
