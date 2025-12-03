@@ -255,7 +255,6 @@ Transform one collection (list, set, map, tuple) into another (list or map). Pow
 
 A shorthand syntax for a common `for` expression operating on lists Gets a specific attribute from *all* elements in a list.
 
-
 `resource_type.name[*].attribute`
 * Equivalent to: `[for item in resource_type.name: item.attribute]`
 * Example: `aws_instance.server[*].id` (Get a list of all server instance IDs).
@@ -269,7 +268,6 @@ Special arguments applicable to `resource` and `module` blocks that change their
 ### `count`
 
 Creates multiple instances of a resource or module based on a whole number.
-
 
 `count = <number>` (e.g., `count = 3`, `count = var.num_servers`, `count = var.enabled ? 1: 0`).
 
@@ -290,7 +288,6 @@ resource "aws_iam_user" "users" {
 Creates multiple instances based on the elements of a **map** or a **set of strings**.
 
 `for_each = <map_or_set>`
-
 
 Instances are tracked as a **map** where keys are from the input map/set (e.g., `aws_iam_user.users["alice"]`, `aws_iam_user.users["bob"]`). Access keys/values within the resource block using `each.key` and `each.value`.
 #### Use Case
@@ -340,13 +337,11 @@ Specifies which provider configuration to use for a resource or module when mult
 
 `provider = aws.secondary_region`
 
-
 ## Functions
 
 Built-in tools for transforming or combining values within expressions. Cannot define custom functions.
 
 `function_name(arg1, arg2,...)`
-
 
 ### Common Categories & Examples
 * **Numeric:** `max()`, `min()`, `abs()`, `ceil()`, `floor()`, `log()`, `pow()`
@@ -409,7 +404,12 @@ resource "aws_security_group" "web_sg" {
 # State & Backends
 
 ### State
-**State is a key component of Terraform**, storing the mapping between your configuration and the real-world resources it manages. Terraform uses this state to create plans and make changes.
+**State is a key component of Terraform**, storing the mapping between your configuration and the real-world resources it manages. Terraform uses this state to create plans and make changes. 
+
+
+It contains metadata about every resource (e.g., IP address, ARN for an AWS instance) and data object provisioned by Terraform. 
+
+**State files can contain sensitive information (e.g., database passwords).** Therefore, they need to be protected with encryption and proper permissions.
 
 It's critical that state is maintained appropriately, ideally remotely, for collaboration and consistency.
 
@@ -419,50 +419,21 @@ Default mode, stores state in a `terraform.tfstate` file locally. Suitable for s
 
 ### Remote State
 Storing state in a shared location (backend).
-## Local vs Remote (S3+DynamoDB, GCS, Azure, HCP Terraform)
-*   **The Terraform state file is a JSON file that Terraform uses to understand the current state of your infrastructure.**
-*   It contains metadata about every resource (e.g., IP address, ARN for an AWS instance) and data object provisioned by Terraform.
-*   **State files can contain sensitive information (e.g., database passwords).** Therefore, they need to be protected with encryption and proper permissions.
-*   State can be stored **locally (default)** or **remotely.**
-*   **Local Backend:**
-    *   Pros: Super easy to get started, works out of the box.
-    *   Cons: Sensitive values in plain text, uncollaborative (hard to share state), manual operation.
-*   **Remote Backend:**
-    *   Separates the developer from the state file stored on a remote server.
-    *   Options:
-        *   **Terraform Cloud (managed by HashiCorp):** Hosts state files, manages permissions. Free for up to five users, then costs per user.
-        *   **Self-managed (e.g., AWS S3 and DynamoDB):** S3 bucket to store the state file (encryption recommended), DynamoDB table for state locking (prevents concurrent applies).
-    *   Benefits of Remote Backend:
-        *   Encrypts sensitive data and gets it off local systems.
-        *   Enables collaboration with multiple engineers.
-        *   Allows for automation through CI/CD pipelines.
-    *   **Bootstrapping Remote Backend:**
-        1.  Configure Terraform with no remote backend (local by default).
-        2.  Define the S3 bucket and DynamoDB table resources in your Terraform code. The DynamoDB table's hash key must be `LockID`.
-        3.  Run `terraform apply` to provision these backend resources.
-        4.  Update your Terraform configuration to use the remote backend (S3 type, specify bucket and DynamoDB table).
-        5.  Run `terraform init` again. Terraform will detect the backend change and prompt to import the local state to the remote backend.
-## Remote Backends in Detail
+Options:
+*   **Terraform Cloud (managed by HashiCorp):** Hosts state files, manages permissions. Free for up to five users, then costs per user.
+*   **Self-managed (e.g., AWS S3 and DynamoDB):** S3 bucket to store the state file (encryption recommended), DynamoDB table for state locking (prevents concurrent applies).
+  
+**Bootstrapping S3 Remote Backend:**
+1.  Configure Terraform with no remote backend (local by default).
+2.  Define the S3 bucket and DynamoDB table resources in your Terraform code in  `terraform { backend {} }`. The DynamoDB table's hash key must be `LockID`.
+3.  Run `terraform apply` to provision these backend resources.
+4.  Update your Terraform configuration to use the remote backend (S3 type, specify bucket and DynamoDB table).
+5.  Run `terraform init` again. Terraform will detect the backend change and prompt to import the local state to the remote backend.
 
-*   **Terraform Cloud Backend:**
-    *   Managed service by HashiCorp.
-    *   Configured in the `terraform` block with `backend "remote"` and specifying `organization` and `workspace`.
-    *   Web UI for managing state, permissions, etc..
-    *   Free for up to 5 users, then $20/user/month.
-*   **Self-managed AWS Backend:**
-    *   Uses an **S3 bucket** to store the state file. Encryption should be enabled.
-    *   Uses a **DynamoDB table** for state locking to prevent concurrent modifications. The hash key must be `LockID`.
-    *   Requires a bootstrapping process to manage the backend resources with Terraform.
-	* Configuration options:
-		You can hardcode the backend settings in backend.tf, or leave the backend block empty and pass values during terraform init using -backend-config.
+Configuration options:
+You can hardcode the backend settings in backend.tf, or leave the backend block empty and pass values during terraform init using -backend-config.
 
-
-
-#### Benefits
-Collaboration, locking, versioning (often), secure storage, separation from code.
-#### Common Backends
-* **HCP Terraform / Terraform Cloud:** Managed service offering remote state, collaboration features, RBAC, Policy as Code, etc.
-* **AWS S3:** Requires an S3 bucket and often a DynamoDB table for locking.
+#### Other Backends
 * **Azure Blob Storage:** Uses an Azure Storage Account container.
 * **Google Cloud Storage (GCS):** Uses a GCS bucket.
 * *(Others exist)*
@@ -475,7 +446,7 @@ Stores state remotely per Workspace. Offers state versioning, resource counts, e
 * `tfe_outputs` data source (HCP Terraform): Shares *only* output values, requiring workspace-specific permissions. **Preferred method**.
 
 ### Migration
- Migrate local state using `terraform init` after adding a `cloud {}`.
+Migrate local state using `terraform init` after adding a `cloud {}` (instead of `backend {}` for s3).
 * Security: HCP Terraform securely stores state, but state can contain sensitive data. Use RBAC appropriately.
 
 #### Importing Existing Infrastructure
@@ -503,20 +474,14 @@ From Monolithic
 ![alt text](images/monolithic.png)
 to isolated environment and component. Start in a simple isolated configuration and then split more if needed.
 ![alt text](images/isolated.png)
-## Locking, Security, State Migration
-* **State locking:** Many remote backends (e.g., Terraform Cloud, S3 with DynamoDB, GCS with locking enabled) prevent concurrent operations that could corrupt state.
-* **Sensitive data:** State can contain secrets. Use encrypted backends, restrict access, and avoid checking state into VCS.
-* **Migration:** When changing backends, update the `backend` block and run `terraform init -migrate-state` to move and reconfigure state safely.
-## Sharing State (terraform_remote_state, tfe_outputs)
-* `terraform_remote_state` data source reads outputs from another state; configure backend settings in the data block to point to the source workspace or backend.
-* In HCP Terraform, `tfe_outputs` exposes outputs from another workspace with workspace-scoped permissions instead of full state access.
-* Use shared outputs to decouple configurations while passing required values (e.g., VPC IDs to app stacks).
 
 ## State CLI Reference
-* `terraform state list` shows tracked addresses; `terraform state show <addr>` inspects attributes stored in state.
+* `terraform state list` shows tracked addresses; 
+* `terraform state show <addr>` inspects attributes stored in state.
 * `terraform state mv` moves addresses within state; prefer a `moved` block when refactoring config.
 * `terraform state rm` removes addresses from state (stops managing them).
-* `terraform state pull` downloads the current state; `terraform state push` uploads a modified state (use sparingly and only with care).
+* `terraform state pull` downloads the current state; 
+* `terraform state push` uploads a modified state (use sparingly and only with care).
 
 ## Move/Remove/Import
 
@@ -599,18 +564,20 @@ Terraform will:
 *   Consists of a collection of `.tf` or `.tf.json` files within a single directory.
 *   The root module is the main directory containing your Terraform configuration.
 *   Child modules are referenced from the root module.
-*   **Benefits of using modules:**
-    *   Raises the level of abstraction.
-    *   Allows infrastructure specialisation.
-    *   Promotes reusability across projects and environments.
-    *   Hides complexity from application developers.
-    *   Encapsulates best practices.
-*   **What Makes a Good Module?:**
-    *   Raises the abstraction level from basic resources.
-    *   Groups logically related resources.
-    *   Exposes necessary input variables.
-    *   Provides useful default values.
-    *   Returns relevant outputs.
+
+**Benefits of using modules:**
+*   Raises the level of abstraction.
+*   Allows infrastructure specialisation.
+*   Promotes reusability across projects and environments.
+*   Hides complexity from application developers.
+*   Encapsulates best practices.
+
+**What Makes a Good Module?:**
+*   Raises the abstraction level from basic resources.
+*   Groups logically related resources.
+*   Exposes necessary input variables.
+*   Provides useful default values.
+*   Returns relevant outputs.
 
 ## Code Structure 
 
@@ -623,10 +590,6 @@ Terraform will:
 * `versions.tf`: (Alternative to `terraform.tf` for `terraform {}` block).
 * `*.auto.tfvars`: Automatic variable definitions (optional).
 * `terraform.tfvars`: Default variable values (optional, often gitignored).
-
-### Module Structure
-
-Similar structure within a `modules/my-module/` directory. Add a `README.md`.
 
 ### Others
 **Formatting:** Use `terraform fmt` consistently.
@@ -641,42 +604,50 @@ Similar structure within a `modules/my-module/` directory. Add a `README.md`.
 Configure providers with the minimum necessary permissions. Avoid hardcoding credentials; use environment variables, provider-specific methods (e.g., instance profiles, workload identity), or tools like Vault.
 
 ### Drift Detection
-Regularly run `terraform plan` (or `terraform plan -refresh-only`) to detect changes made outside Terraform. HCP Terraform offers automated drift detection. Address drift promptly.
+Regularly run `terraform plan` (or `terraform plan -refresh-only`) to detect changes made outside Terraform. HCP Terraform offers automated drift detection.
+
 ### Manual vs. Auto Approve
- Use manual approval (`terraform apply plan.out`) during development/review. Automate approvals (`terraform apply -auto-approve`) in CI/CD pipelines *after* thorough review and testing stages.
+Use manual approval (`terraform apply plan.out`) during development/review. Automate approvals (`terraform apply -auto-approve`) in CI/CD pipelines *after* thorough review and testing stages.
 
 ## Managing Multiple Environments
+The need to manage different environments (dev, staging, production) with similar configurations.
 
-*   The need to manage different environments (dev, staging, production) with similar configurations.
-*   **Two main approaches:**
-    *   **Terraform Workspaces:**
-        *   Use named sections within a single remote backend to manage different environments.
-        *   Managed with the `terraform workspace` command.
-        *   Can reference the current workspace using `terraform.workspace` in configurations (e.g., for naming resources).
-        *   Pros: Easy to get started, minimises code duplication.
-        *   Cons: Easy to forget the current workspace and apply changes to the wrong environment, state files are all in the same remote backend (potential permission issues), less explicit about what is deployed in each environment just by looking at the code.
-    *   **Directory Structure:**
-        *   Create separate subdirectories for each environment (e.g., `dev`, `staging`, `production`).
-        *   Each directory contains its own Terraform configuration (potentially consuming shared modules).
-        *   Pros: Isolated backends (different S3 buckets, DynamoDB tables) for each environment, reduces potential for human error (less chance of applying to the wrong environment), fully represents the deployed state in the codebase.
-        *   Cons: More code duplication compared to workspaces, requires navigating between directories to apply changes.
-*   As infrastructure grows, consider breaking down configurations into logical component groups (e.g., compute, networking) rather than one massive config.
+**Two main approaches:**
+*   **Terraform Workspaces:**
+    *   Use named sections within a single remote backend to manage different environments.
+    *   Managed with the `terraform workspace` command.
+    *   Can reference the current workspace using `terraform.workspace` in configurations (e.g., for naming resources).
+    *   Pros: Easy to get started, minimises code duplication.
+    *   Cons: Easy to forget the current workspace and apply changes to the wrong environment, state files are all in the same remote backend (potential permission issues), less explicit about what is deployed in each environment just by looking at the code.
+*   **Directory Structure:**
+    *   Create separate subdirectories for each environment (e.g., `dev`, `staging`, `production`).
+    *   Each directory contains its own Terraform configuration (potentially consuming shared modules).
+    *   Pros: Isolated backends (different S3 buckets, DynamoDB tables) for each environment, reduces potential for human error (less chance of applying to the wrong environment), fully represents the deployed state in the codebase.
+    *   Cons: More code duplication compared to workspaces, requires navigating between directories to apply changes.
+
+As infrastructure grows, consider breaking down configurations into logical component groups (e.g., compute, networking) rather than one massive config.
 *   **Terraform Remote State:** Allows referencing the state (outputs) of a completely separate Terraform configuration. Useful for decoupling infrastructure components while still being able to share information (e.g., referencing the IP addresses of compute instances from a networking configuration).
 *   **Meta-tooling (TerraGrant):** Tools like TerraGrant can help manage complexity with the directory structure approach, reduce code repetition, and simplify operations across multiple environments and accounts.
 
 ## Module Sources (local, Registry, git) & Version Pinning
-*   **Module Sources:**
-    *   Local paths (relative paths to directories on the local filesystem).
-    *   Terraform Registry (public and private registries). Source format: `<namespace>/<name>/<provider>`. Version pinning is important.
-    *   Git repositories (HTTPS or SSH URLs to GitHub or other Git hosts). Specific syntax for GitHub. Version pinning via tags/commits.
-    *   S3 buckets (less common).
-*   **Referencing Modules:** Use the `module` block with a `source` argument specifying the location.
-*   **Module Inputs:** Input variables defined in the module can be passed in the `module` block. This allows for customising module behaviour.
-*   **Meta-Arguments in Modules:** `count`, `for_each`, `providers`, and `depends_on` can also be used within `module` blocks.
-*   **Terraform Registry:** Contains both providers and modules. Many modules available for various providers and use cases (e.g., a security group module).
+**Module Sources:**
+*   Local paths (relative paths to directories on the local filesystem).
+*   Terraform Registry (public and private registries). Source format: `<namespace>/<name>/<provider>`. Version pinning is important.
+*   Git repositories (HTTPS or SSH URLs to GitHub or other Git hosts). Specific syntax for GitHub. Version pinning via tags/commits.
+*   S3 buckets (less common).
+ 
+**Referencing Modules:** Use the `module` block with a `source` argument specifying the location.
+
+**Module Inputs:** Input variables defined in the module can be passed in the `module` block. This allows for customising module behaviour.
+
+**Meta-Arguments in Modules:** `count`, `for_each`, `providers`, and `depends_on` can also be used within `module` blocks.
+
+**Terraform Registry:** Contains both providers and modules. Many modules available for various providers and use cases (e.g., a security group module).
+
 ## Private Module Registry / No-Code Provisioning
-* HCP Terraform/Enterprise offers a private registry for modules and providers. Connect a VCS repo with `terraform-<PROVIDER>-<NAME>` naming, tag releases (`x.y.z`) to publish versions, and consume via `<HOSTNAME>/<ORG>/<NAME>/<PROVIDER>`.
-* No-code provisioning lets operators deploy registry modules from the UI by exposing module inputs as form fields without writing configuration.
+HCP Terraform/Enterprise offers a private registry for modules and providers. Connect a VCS repo with `terraform-<PROVIDER>-<NAME>` naming, tag releases (`x.y.z`) to publish versions, and consume via `<HOSTNAME>/<ORG>/<NAME>/<PROVIDER>`.
+
+No-code provisioning lets operators deploy registry modules from the UI by exposing module inputs as form fields without writing configuration.
 
 # Environments & Workspaces
 
@@ -702,34 +673,13 @@ Trigger runs programmatically via HCP Terraform API. For integration with extern
 ### Workspace UI
 Shows run history, status, logs, plan output, policy check results, apply confirmation steps.
 
-## CLI Workspaces vs Directory-per-env
-* CLI workspaces keep one configuration with multiple named state instances (`terraform workspace new/select/list/delete`). Good for small sets of similar environments.
-* Directory-per-environment keeps separate configuration directories/backends per env, making targets explicit in code and isolating state.
-* Provider aliases and input variables are used to switch accounts/regions in either model.
-## Multi-account/region patterns; Terragrunt overview
-* Use multiple provider configurations with `alias` to target additional accounts or regions, and pass the desired provider to resources/modules via the `providers` meta-argument.
-* Separate backends per account/region avoid cross-environment impact. Third-party wrappers like Terragrunt automate patterns but are outside the core Terraform CLI.
-
 # HCP Terraform / Terraform Enterprise
 
-## Private Module Registry (HCP Terraform)
-
-* Allows publishing **private modules and providers** within an organization.
-* **Secure distribution** for reusable components, versioned, searchable.
-* Managed via **VCS repositories** following specific naming (`terraform-<PROVIDER>-<NAME>`) and structure conventions.
-* **Publishing:** Connect VCS provider in HCP Terraform UI, select repo, tag releases (`x.y.z`) in VCS.
-* **Usage Syntax:** `<HOSTNAME>/<ORGANIZATION>/<MODULE_NAME>/<PROVIDER_NAME>` (e.g., `app.terraform.io/my-org/vpc/aws`).
-* **Governance:** Sentinel policies can restrict module usage (e.g., mandate private modules, specific versions).
-* **No-Code Provisioning:** (Plus Edition) Deploy modules from the private registry via UI without writing HCL.
 ## Workspaces, Projects, Variable Sets
 * **Workspaces:** Top-level units in HCP Terraform; each has its own runs, state, variables, and permissions.
 * **Projects:** Optional grouping for workspaces to organize access and visibility.
 * **Variable Sets:** Reusable collections of Terraform and environment variables attachable to multiple workspaces; later sets override earlier ones for conflicts.
-## Run Workflows (CLI, VCS/UI, API), remote exec
-* **CLI-driven:** Local CLI with `cloud {}` block; runs recorded in HCP Terraform, execution mode can be local or remote.
-* **VCS/UI-driven:** Linked repo/branch triggers speculative plans on commits/PRs and applies on merge/confirm.
-* **API-driven:** Create runs via API tokens; automation can supply configuration uploads or reference VCS branches.
-* Set `execution_mode = remote` to run Terraform in HCP Terraform’s workers; `local` keeps execution on the client.
+
 ## RBAC and Permissions Model
 * HCP Terraform uses teams and workspaces; assign workspace access (Admin/Write/Read/Plan-only) or custom permissions covering runs, state, and variables.
 * Organization-level permissions cover settings like VCS connections, policies, and registry publishing. Follow least-privilege by scoping teams to only required workspaces and actions.
@@ -780,7 +730,6 @@ Use `sentinel test` command with mock data generated from HCP Terraform plans (`
 Test with `opa test` using JSON plan data gathered via API or `terraform show -json plan.out`.
 #### Scope
 Policies check the *plan* against configuration, state, and run data. They don't continuously monitor live infrastructure or prevent non-Terraform changes.
-
 
 ## Sentinel (levels, testing)
 * Sentinel policies in HCP Terraform/Enterprise run between plan and apply with enforcement levels: `advisory`, `soft-mandatory`, `hard-mandatory`.
@@ -867,41 +816,6 @@ Validate user-provided input values *before* Terraform attempts to use them.
 
 Provide early feedback on invalid inputs.
 
-## fmt / validate / plan; check blocks; pre/postconditions; variable validation
-* `terraform fmt` rewrites configuration to canonical style; use `terraform fmt -check` in CI.
-* `terraform validate` performs static syntax and argument checks without contacting providers.
-* `terraform plan` shows proposed changes; `-refresh-only` detects drift; `-destroy` prepares a destroy plan.
-* Use `check` blocks for advisory assertions, `precondition`/`postcondition` for mandatory checks, and `validation` blocks on variables to fail fast on bad input.
-## Terraform Test (.tftest.hcl/.json, mocks)
-* `terraform test` runs test files in `tests/` ending with `.tftest.hcl/.json`, supporting `plan`, `apply`, and `destroy` commands inside `run` blocks.
-* Define inputs in `variables {}`, configure providers, and add `assert` blocks to verify outputs or resource attributes.
-* Mock providers/resources/data with `override_*` blocks (v1.7+) to avoid real API calls; refresh mocks with `terraform test -update`.
-## Terratest and CI integration
-* HashiCorp guidance encourages integrating Terraform checks into CI: `terraform fmt -check`, `terraform init`, `terraform validate`, and `terraform plan`.
-* Language-based testing (e.g., Terratest) can exercise deployed infrastructure alongside `terraform test` for deeper coverage.
-
-# Reference Architecture
-## Example: AWS web app with LB/RDS/Route53/S3
-
-# Operations & Automation
-*   **General Developer Workflow:** Write/update code -> local testing -> create Pull Request (PR) -> code review -> CI tests (e.g., Terratest) -> merge PR -> CD pipeline to staging (automated) -> promotion to production (potentially manual or automated after tagging release).
-*   **Testing Schedule:** Run `terraform plan` periodically in CI to detect out-of-band changes.
-*   **Working with Multiple Accounts:** Beneficial for security, isolation, and avoiding naming conflicts. Terminology varies by cloud (AWS accounts, GCP projects). Adds complexity but generally worth it. Reference to a HashiCorp talk on multi-account AWS with Terraform.
-*   **Third-Party Tools:**
-    *   TerraGrant: Minimise code repetition, helps with multi-account setups.
-    *   Cloud Nuke: Easily clean up all resources in a cloud account (useful for test environments).
-*   **Local Scripting:** Use Makefiles or shell scripts to store and run frequently used Terraform commands to reduce human error.
-*   **CI/CD Tools:** GitHub Actions (demonstrated later), CircleCI, GitLab CI, Atlantis (Terraform-specific) are all viable options for automating IaC workflows.
-
-## CI/CD patterns, drift detection schedule
-* Typical pipeline: `terraform fmt -check` -> `terraform init` -> `terraform validate` -> `terraform plan`; require human or policy approval before `terraform apply` (or `-auto-approve` in controlled stages).
-* Store state in a remote backend with locking so CI agents never handle local state files.
-* Use speculative plans on pull requests (HCP Terraform VCS workflow) and promote applies after review.
-* Detect drift with scheduled `terraform plan -refresh-only` or Drift Detection in HCP Terraform workspaces.
-## Scripts/Makefiles; Atlantis overview
-* Use wrapper scripts or Makefiles to standardize `init/plan/apply/destroy` arguments (backend config, var files) and reduce operator error.
-* Terraform Cloud/Enterprise offers native PR automation and run tasks; community tools like Atlantis provide similar plan/apply workflows via VCS comments.
-
 # Security & Compliance
 
 ## Terraform Security and Compliance Tools
@@ -930,7 +844,6 @@ Integrate static analysis and compliance tools into your workflow (e.g., pre-com
 
 **Atlantis:** Open-source application for Terraform pull request automation. Allows teams to collaborate on infrastructure changes via Git pull requests.
 
-
 ## Secrets handling; least privilege
 * Avoid hardcoding secrets in configuration or state; use environment variables, supported cloud auth methods, or secret stores (Vault, cloud key managers).
 * Mark sensitive inputs/outputs with `sensitive = true`; restrict state access and enable backend encryption.
@@ -944,102 +857,3 @@ Integrate static analysis and compliance tools into your workflow (e.g., pre-com
 * Pin Terraform in the `terraform` block with `required_version` and pin providers with `required_providers` `version` constraints to ensure reproducible runs.
 * Use `terraform init -upgrade` to move to newer provider releases after review; check provider and Terraform upgrade guides for breaking changes.
 * State files are forward-compatible within a major version; avoid downgrades after upgrading state and keep teams aligned on the same CLI version.
-
-# Move/Remove/Import
-## Moved Blocks in Terraform
-
-A **`moved` block** tells Terraform that a resource/data/module was **renamed or relocated**, so it can update the state without destroying and recreating the resource.
-
-### **Example: renaming a resource**
-
-```hcl
-# Inform Terraform that the resource address changed
-moved {
-  from = aws_s3_bucket.old_name
-  to   = aws_s3_bucket.new_name
-}
-
-# New resource name
-resource "aws_s3_bucket" "new_name" {
-  bucket = "my-bucket"
-}
-```
-
-This prevents Terraform from deleting the old resource and creating a new one.
-
-
-
-## Removed Blocks in Terraform
-
-A **`removed` block** tells Terraform that a resource was **deliberately removed** from the configuration and should also be removed from state (and optionally deleted from the provider).
-
-Useful when cleaning up old resources or when you want to ensure Terraform no longer manages something.
-
-### **Example: removing a resource cleanly**
-
-```hcl
-# Inform Terraform that this resource is intentionally removed
-removed {
-  from = aws_s3_bucket.legacy
-  lifecycle {
-    destroy = true
-  }
-}
-```
-
-This:
-
-* removes `aws_s3_bucket.legacy` from state
-* deletes it from the provider (because `destroy = true`)
-
-If `destroy = false`, the resource stays in the cloud but is removed from Terraform’s state.
-
-Do you maybe mean **`import`** (the new Terraform 1.5+ block), not **“input”**?
-Terraform has:
-
-* `moved`
-* `removed`
-* **`import`**
-
-…but **there is no “input block”** in Terraform.
-
-
-## Import Blocks in Terraform
-
-An **`import` block** tells Terraform to **import an existing resource** into the state and associate it with a resource defined in your configuration.
-
-This replaces the old `terraform import` CLI command.
-
-### **Example: import an existing S3 bucket**
-
-```hcl
-# Resource you want Terraform to manage
-resource "aws_s3_bucket" "example" {
-  bucket = "my-existing-bucket"
-}
-
-# Import instruction
-import {
-  to = aws_s3_bucket.example
-  id = "my-existing-bucket"
-}
-```
-
-Terraform will:
-
-* read the real bucket from AWS
-* map it to `aws_s3_bucket.example` in the state
-* no resource is created or destroyed
-
-# Troubleshooting & Gotchas
-## Timeouts, renames causing recreation, naming conflicts, immutable params, forgetting destroys
-
-*   **Changing Resource Names:** Can cause Terraform to delete the old resource and create a new one. Be careful when renaming.
-*   **Sensitive Data in State Files:** Requires encryption and careful permission management.
-*   **Cloud Timeouts:** Terraform might time out if cloud resource provisioning takes too long. Timeouts can be configured, and re-running `terraform apply` often resolves this.
-*   **Naming Conflicts:** Resources within the same cloud account often require unique names, leading to potential conflicts if not managed properly.
-*   **Forgetting to Destroy Test Infrastructures:** Can lead to unexpected cloud bills. Tools like Cloud Nuke can help.
-*   **Unidirectional Version Upgrades:** State files are associated with the Terraform version used. Upgrading Terraform might prevent using older versions with the same state. Ensure team consistency in Terraform version.
-*   **Multiple Ways to Accomplish the Same Configuration:** Choose the cleanest and most maintainable approach.
-*   **Immutable Parameters:** Some resource parameters cannot be changed after creation, requiring deletion and recreation to modify.
-*   **Out-of-Band Changes:** Making changes to infrastructure outside of Terraform will lead to the Terraform state becoming inaccurate and potentially dangerous if `terraform apply` is run.
