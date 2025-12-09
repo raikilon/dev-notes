@@ -20,6 +20,7 @@
 *   **Cloud-specific vs. Cloud-agnostic tools:**
     *   Cloud-specific (CloudFormation, Azure Resource Manager, Google Cloud Deployment Manager) - work within a single cloud.
     *   **Cloud-agnostic (Terraform) - can be used across multiple clouds and services with APIs.** Useful for multi-cloud or third-party services.
+*   Terraform often complements other IaC tools (e.g., provisioning with Terraform + configuration via Ansible, image templating with Packer, orchestration with Kubernetes).
 
 # Core Concepts
 ## Terraform Architecture (Core, Providers, State, Registry)
@@ -35,11 +36,6 @@
     *   `terraform` block to specify required providers (and versions).
     *   `provider` block to configure the provider (e.g., AWS region).
     *   `resource` block to define infrastructure resources (e.g., `aws_instance`) with attributes (AMI, instance type).
-## Declarative vs Imperative;
-Terraform can be used with other IaC tools:
-*   Terraform (provisioning) + Ansible (configuration management).
-*   Terraform (provisioning) + Packer (image templating).
-*   Terraform (provisioning) + Kubernetes (orchestration).
 # Getting Started
 ## Install & CLI Basics
 * Install the Terraform CLI binary for your OS.
@@ -731,13 +727,6 @@ Test with `opa test` using JSON plan data gathered via API or `terraform show -j
 #### Scope
 Policies check the *plan* against configuration, state, and run data. They don't continuously monitor live infrastructure or prevent non-Terraform changes.
 
-## Sentinel (levels, testing)
-* Sentinel policies in HCP Terraform/Enterprise run between plan and apply with enforcement levels: `advisory`, `soft-mandatory`, `hard-mandatory`.
-* Test policies locally with `sentinel test` using mocks exported from Terraform plans (Plan Export API or UI download).
-## OPA/Rego (Conftest, plan JSON)
-* Terraform can render plan JSON via `terraform show -json plan.out`; this output can be evaluated by external policy engines like OPA/Conftest.
-* Rego policies typically evaluate planned resources and changes to enforce guardrails before apply.
-
 # Testing & Validation
 
 ## Terraform Testing (v1.6+)
@@ -834,7 +823,7 @@ Integrate static analysis and compliance tools into your workflow (e.g., pre-com
 
 **Sentinel/OPA (HCP Terraform):** Enforce policies centrally during runs (see *Policy as Code* sections).
 
-**Secrets Management:** Integrate with tools like HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, GCP Secret Manager to securely inject secrets at runtime rather than storing them in state or variables.
+**Secrets & Least Privilege:** Avoid hardcoding secrets; use Vault/AWS Secrets Manager/Azure Key Vault/GCP Secret Manager; mark sensitive inputs/outputs; restrict/encrypt state access; grant only required provider permissions and prefer short-lived credentials.
 
 ## Ecosystem Tools
 
@@ -843,14 +832,6 @@ Integrate static analysis and compliance tools into your workflow (e.g., pre-com
 **Infracost:** CLI tool and CI/CD integration that shows cloud cost estimates for Terraform changes *before* they are applied. Helps manage budgets.
 
 **Atlantis:** Open-source application for Terraform pull request automation. Allows teams to collaborate on infrastructure changes via Git pull requests.
-
-## Secrets handling; least privilege
-* Avoid hardcoding secrets in configuration or state; use environment variables, supported cloud auth methods, or secret stores (Vault, cloud key managers).
-* Mark sensitive inputs/outputs with `sensitive = true`; restrict state access and enable backend encryption.
-* Grant providers only the permissions required (principle of least privilege) and prefer short-lived credentials.
-## Scanners: TFLint, Checkov, Terrascan, tfsec; Infracost for cost visibility
-* Community tools complement Terraform: **TFLint** for provider-specific linting and scanners such as **tfsec**, **Checkov**, or **Terrascan** for policy/security checks.
-* Cost visibility can be added with tools like **Infracost** to surface estimates during plan review.
 
 # Versioning & Upgrades
 ## Pinning providers/Terraform versions; state compatibility and upgrades
