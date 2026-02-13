@@ -137,7 +137,7 @@ We want to have a separation between the domain model and infrastructure models 
 
 Does it make sense to have this split? Usually, if we own the application (in modern team setups with microservices), we also own the database and we do not want differences between the two (JPA entity and domain model), because a difference is logically wrong and also too difficult to maintain.
 
-![Legacy vs Modern applications ownership](legacy-vs-modern-application-ownership.png)
+![Legacy vs Modern applications ownership](images/legacy-vs-modern-application-ownership.png)
 
 On the API side instead, we need this split and mapping. We cannot change the API model as we want because we have consumers.
 
